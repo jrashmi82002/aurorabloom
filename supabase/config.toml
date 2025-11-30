@@ -1,0 +1,4 @@
+project_id = "nndtjlqqnpdpnfofzlie"
+
+[functions.therapy-chat]
+verify_jwt = true
