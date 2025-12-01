@@ -16,24 +16,95 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          age_group: string | null
           created_at: string | null
+          daily_message_count: number | null
           full_name: string | null
+          gender_identity: string | null
           id: string
+          last_message_date: string | null
+          pro_subscription_ends_at: string | null
+          pro_subscription_status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string | null
         }
         Insert: {
+          age_group?: string | null
           created_at?: string | null
+          daily_message_count?: number | null
           full_name?: string | null
+          gender_identity?: string | null
           id: string
+          last_message_date?: string | null
+          pro_subscription_ends_at?: string | null
+          pro_subscription_status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          age_group?: string | null
           created_at?: string | null
+          daily_message_count?: number | null
           full_name?: string | null
+          gender_identity?: string | null
           id?: string
+          last_message_date?: string | null
+          pro_subscription_ends_at?: string | null
+          pro_subscription_status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      quiz_responses: {
+        Row: {
+          age_group: string | null
+          created_at: string | null
+          current_mood_scales: Json | null
+          custom_notes: string | null
+          gender_identity: string | null
+          id: string
+          previous_experience: string | null
+          session_id: string
+          therapy_goals: string[] | null
+          user_id: string
+        }
+        Insert: {
+          age_group?: string | null
+          created_at?: string | null
+          current_mood_scales?: Json | null
+          custom_notes?: string | null
+          gender_identity?: string | null
+          id?: string
+          previous_experience?: string | null
+          session_id: string
+          therapy_goals?: string[] | null
+          user_id: string
+        }
+        Update: {
+          age_group?: string | null
+          created_at?: string | null
+          current_mood_scales?: Json | null
+          custom_notes?: string | null
+          gender_identity?: string | null
+          id?: string
+          previous_experience?: string | null
+          session_id?: string
+          therapy_goals?: string[] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "therapy_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       therapy_messages: {
         Row: {
@@ -69,27 +140,33 @@ export type Database = {
       }
       therapy_sessions: {
         Row: {
+          has_quiz_completed: boolean | null
           id: string
           is_active: boolean | null
           last_message_at: string | null
+          message_count: number | null
           started_at: string | null
           therapy_type: Database["public"]["Enums"]["therapy_type"]
           title: string
           user_id: string
         }
         Insert: {
+          has_quiz_completed?: boolean | null
           id?: string
           is_active?: boolean | null
           last_message_at?: string | null
+          message_count?: number | null
           started_at?: string | null
           therapy_type: Database["public"]["Enums"]["therapy_type"]
           title: string
           user_id: string
         }
         Update: {
+          has_quiz_completed?: boolean | null
           id?: string
           is_active?: boolean | null
           last_message_at?: string | null
+          message_count?: number | null
           started_at?: string | null
           therapy_type?: Database["public"]["Enums"]["therapy_type"]
           title?: string
@@ -102,7 +179,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_user_send_message: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
     }
     Enums: {
       therapy_type:
@@ -111,6 +191,13 @@ export type Database = {
         | "physiotherapy"
         | "ayurveda"
         | "talk_therapy"
+        | "genz_therapy"
+        | "female_therapy"
+        | "male_therapy"
+        | "older_therapy"
+        | "children_therapy"
+        | "millennial_therapy"
+        | "advanced_therapy"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -244,6 +331,13 @@ export const Constants = {
         "physiotherapy",
         "ayurveda",
         "talk_therapy",
+        "genz_therapy",
+        "female_therapy",
+        "male_therapy",
+        "older_therapy",
+        "children_therapy",
+        "millennial_therapy",
+        "advanced_therapy",
       ],
     },
   },
