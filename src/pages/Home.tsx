@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Leaf, LogOut, Sparkles, Heart, Activity, FlowerIcon, MessageCircle } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { ProAccessRequest } from "@/components/ProAccessRequest";
 
 const therapyTypes = [
   {
@@ -133,6 +134,10 @@ const Home = () => {
               </Card>
             );
           })}
+        </div>
+
+        <div className="max-w-2xl mx-auto mt-16">
+          <ProAccessRequest />
         </div>
       </main>
     </div>
