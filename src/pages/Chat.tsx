@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, Send, Mic, MicOff, Phone } from "lucide-react";
+import { ArrowLeft, Send, Volume2, VolumeX, Loader2 } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,6 +22,11 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showQuiz, setShowQuiz] = useState(true);
+  const [quizData, setQuizData] = useState<QuizData | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -39,7 +45,6 @@ const Chat = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
-        initializeSession(session.user.id);
       }
     });
   }, [navigate]);
@@ -50,7 +55,7 @@ const Chat = () => {
         .from("therapy_sessions")
         .insert({
           user_id: userId,
-          therapy_type: therapyType as "yogic" | "psychological" | "physiotherapy" | "ayurveda" | "talk_therapy",
+          therapy_type: therapyType as any,
           title: `${therapyTitles[therapyType]} Session`,
         })
         .select()
@@ -58,25 +63,38 @@ const Chat = () => {
 
       if (error) throw error;
       setSessionId(session.id);
-
-      // Send initial AI greeting
-      sendInitialMessage(session.id);
+      return session.id;
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
+      return null;
     }
   };
 
-  const sendInitialMessage = async (sessionId: string) => {
+  const handleQuizComplete = async (data: QuizData) => {
+    setQuizData(data);
+    setShowQuiz(false);
+    
+    if (!user) return;
+    
+    // Initialize session and send initial message
+    const newSessionId = await initializeSession(user.id);
+    if (newSessionId) {
+      sendInitialMessage(newSessionId, data);
+    }
+  };
+
+  const sendInitialMessage = async (sid: string, quiz: QuizData) => {
     try {
       const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
-          sessionId,
+          sessionId: sid,
           therapyType,
           isInitial: true,
+          quizData: quiz,
         },
       });
 
@@ -90,10 +108,15 @@ const Chat = () => {
 
       // Save to database
       await supabase.from("therapy_messages").insert({
-        session_id: sessionId,
+        session_id: sid,
         role: "assistant",
         content: data.message,
       });
+
+      // Speak the initial message
+      if (voiceEnabled) {
+        speakText(data.message);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -101,6 +124,41 @@ const Chat = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const speakText = async (text: string) => {
+    if (!voiceEnabled) return;
+    
+    setIsSpeaking(true);
+    try {
+      // Use browser's built-in speech synthesis for simplicity
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = voiceGender === "female" ? 1.1 : 0.9;
+      
+      // Try to find a good voice
+      const voices = speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => 
+        voiceGender === "female" 
+          ? v.name.includes("Female") || v.name.includes("Samantha") || v.name.includes("Victoria")
+          : v.name.includes("Male") || v.name.includes("Daniel") || v.name.includes("Alex")
+      ) || voices.find(v => v.lang.startsWith("en"));
+      
+      if (preferredVoice) utterance.voice = preferredVoice;
+      
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error("Speech error:", error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const stopSpeaking = () => {
+    speechSynthesis.cancel();
+    setIsSpeaking(false);
   };
 
   const sendMessage = async () => {
@@ -119,12 +177,13 @@ const Chat = () => {
         content: input,
       });
 
-      // Get AI response
+      // Get AI response with quiz data for context
       const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
           sessionId,
           therapyType,
           messages: [...messages, userMessage],
+          quizData,
         },
       });
 
@@ -142,6 +201,11 @@ const Chat = () => {
         role: "assistant",
         content: data.message,
       });
+
+      // Speak the response
+      if (voiceEnabled) {
+        speakText(data.message);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -156,6 +220,26 @@ const Chat = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Load voices
+  useEffect(() => {
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+  }, []);
+
+  if (!user) return null;
+
+  // Show quiz first
+  if (showQuiz && sessionId === null) {
+    return (
+      <PreSessionQuiz
+        sessionId=""
+        userId={user.id}
+        therapyType={therapyType}
+        onComplete={handleQuizComplete}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-soft flex flex-col">
@@ -177,9 +261,36 @@ const Chat = () => {
               Your personal healing session
             </p>
           </div>
-          <Button variant="outline" size="icon" className="shrink-0">
-            <Phone className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setVoiceGender(voiceGender === "female" ? "male" : "female")}
+              className="text-xs"
+            >
+              {voiceGender === "female" ? "♀ Female" : "♂ Male"}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (isSpeaking) {
+                  stopSpeaking();
+                } else {
+                  setVoiceEnabled(!voiceEnabled);
+                }
+              }}
+              className="shrink-0"
+            >
+              {isSpeaking ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : voiceEnabled ? (
+                <Volume2 className="w-4 h-4" />
+              ) : (
+                <VolumeX className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -202,6 +313,18 @@ const Chat = () => {
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {message.content}
                 </p>
+                {message.role === "assistant" && voiceEnabled && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-7 text-xs opacity-60 hover:opacity-100"
+                    onClick={() => speakText(message.content)}
+                    disabled={isSpeaking}
+                  >
+                    <Volume2 className="w-3 h-3 mr-1" />
+                    Play
+                  </Button>
+                )}
               </Card>
             </div>
           ))}
@@ -220,13 +343,6 @@ const Chat = () => {
         </div>
 
         <div className="flex gap-2 items-end">
-          <Button
-            variant="outline"
-            size="icon"
-            className="shrink-0 h-12 w-12"
-          >
-            <Mic className="w-5 h-5" />
-          </Button>
           <div className="flex-1 flex gap-2">
             <Input
               value={input}
