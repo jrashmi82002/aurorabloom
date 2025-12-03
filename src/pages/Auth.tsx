@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Leaf } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -63,9 +63,7 @@ const Auth = () => {
       <Card className="w-full max-w-md shadow-calm border-0">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-calm flex items-center justify-center">
-              <Leaf className="w-8 h-8 text-white" />
-            </div>
+            <Logo size="lg" showText={false} />
           </div>
           <CardTitle className="text-3xl font-serif">
             {isLogin ? "Welcome Back" : "Begin Your Journey"}
