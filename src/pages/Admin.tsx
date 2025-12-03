@@ -9,6 +9,7 @@ import { AdminUserAnalytics } from "@/components/admin/AdminUserAnalytics";
 import { AdminSessionInsights } from "@/components/admin/AdminSessionInsights";
 import { AdminEmailBroadcast } from "@/components/admin/AdminEmailBroadcast";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/Logo";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -69,11 +70,10 @@ const Admin = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-              <Crown className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-2xl font-serif font-semibold">Admin Panel</h1>
+          <Logo size="sm" />
+          <div className="flex items-center gap-2 ml-auto">
+            <Crown className="w-5 h-5 text-amber-500" />
+            <span className="font-semibold">Admin Panel</span>
           </div>
         </div>
       </header>
