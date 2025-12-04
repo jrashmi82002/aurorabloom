@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { Send, Volume2, VolumeX, Square, Home, Play } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
-import { SessionSidebar } from "@/components/SessionSidebar";
 import { Logo } from "@/components/Logo";
 
 interface Message {
@@ -33,7 +32,12 @@ const therapyTitles: Record<string, string> = {
 
 const Chat = () => {
   const [searchParams] = useSearchParams();
-  const therapyType = searchParams.get("type") || "talk_therapy";
+  const therapyType = (searchParams.get("type") || "talk_therapy") as 
+    "yogic" | "psychological" | "physiotherapy" | "ayurveda" | "talk_therapy" | 
+    "genz_therapy" | "female_therapy" | "male_therapy" | "older_therapy" | 
+    "children_therapy" | "millennial_therapy" | "advanced_therapy";
+  const existingSessionId = searchParams.get("session");
+  
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -44,6 +48,7 @@ const Chat = () => {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -54,9 +59,27 @@ const Chat = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        checkExistingProfile(session.user.id);
+        
+        // If there's an existing session ID in URL, load it
+        if (existingSessionId) {
+          loadExistingSession(existingSessionId);
+        }
       }
     });
-  }, [navigate]);
+  }, [navigate, existingSessionId]);
+
+  const checkExistingProfile = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("age_group, gender_identity")
+      .eq("id", userId)
+      .single();
+
+    if (profile?.age_group && profile?.gender_identity) {
+      setHasExistingProfile(true);
+    }
+  };
 
   const initializeSession = async (userId: string, quiz: QuizData) => {
     try {
@@ -85,12 +108,14 @@ const Chat = () => {
         custom_notes: quiz.customNotes,
       });
 
-      // Update profile
-      await supabase.from("profiles").upsert({
-        id: userId,
-        age_group: quiz.ageGroup,
-        gender_identity: quiz.genderIdentity,
-      });
+      // Update profile with demographics if not already set
+      if (!hasExistingProfile) {
+        await supabase.from("profiles").upsert({
+          id: userId,
+          age_group: quiz.ageGroup,
+          gender_identity: quiz.genderIdentity,
+        });
+      }
 
       setSessionId(session.id);
       return session.id;
@@ -126,6 +151,26 @@ const Chat = () => {
 
       if (error) throw error;
 
+      // Also load quiz data for context
+      const { data: quizResponse } = await supabase
+        .from("quiz_responses")
+        .select("*")
+        .eq("session_id", sid)
+        .single();
+
+      if (quizResponse) {
+        setQuizData({
+          ageGroup: quizResponse.age_group || "",
+          genderIdentity: quizResponse.gender_identity || "",
+          currentMood: (quizResponse.current_mood_scales as any)?.mood || 5,
+          stressLevel: (quizResponse.current_mood_scales as any)?.stress || 5,
+          therapyGoals: quizResponse.therapy_goals || [],
+          previousExperience: quizResponse.previous_experience || "",
+          customNotes: quizResponse.custom_notes || "",
+          specificConcerns: [],
+        });
+      }
+
       setMessages(msgs.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })));
       setSessionId(sid);
       setShowQuiz(false);
@@ -138,21 +183,26 @@ const Chat = () => {
     }
   };
 
-  const handleNewSession = () => {
-    setMessages([]);
-    setSessionId(null);
-    setShowQuiz(true);
-    setQuizData(null);
-  };
-
   const sendInitialMessage = async (sid: string, quiz: QuizData) => {
     try {
+      // Fetch previous sessions for context
+      const { data: previousSessions } = await supabase
+        .from("therapy_sessions")
+        .select("id, therapy_type, started_at")
+        .eq("user_id", user?.id)
+        .eq("therapy_type", therapyType)
+        .neq("id", sid)
+        .order("started_at", { ascending: false })
+        .limit(3);
+
       const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
           sessionId: sid,
           therapyType,
           isInitial: true,
           quizData: quiz,
+          hasPreviousSessions: previousSessions && previousSessions.length > 0,
+          messageCount: 0,
         },
       });
 
@@ -185,6 +235,9 @@ const Chat = () => {
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
 
+    // Stop any ongoing speech first
+    speechSynthesis.cancel();
+    
     setIsSpeaking(true);
     try {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -237,6 +290,7 @@ const Chat = () => {
           therapyType,
           messages: [...messages, userMessage],
           quizData,
+          messageCount: messages.length + 1,
         },
       });
 
@@ -253,6 +307,12 @@ const Chat = () => {
         role: "assistant",
         content: data.message,
       });
+
+      // Update message count
+      await supabase
+        .from("therapy_sessions")
+        .update({ message_count: messages.length + 2 })
+        .eq("id", sessionId);
 
       if (voiceEnabled) {
         speakText(data.message);
@@ -279,80 +339,75 @@ const Chat = () => {
 
   if (!user) return null;
 
-  if (showQuiz) {
+  if (showQuiz && !existingSessionId) {
     return (
       <PreSessionQuiz
         userId={user.id}
         therapyType={therapyType}
         onComplete={handleQuizComplete}
+        hasExistingProfile={hasExistingProfile}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-soft flex">
-      <SessionSidebar
-        userId={user.id}
-        currentSessionId={sessionId}
-        therapyType={therapyType}
-        onSessionSelect={loadExistingSession}
-        onNewSession={handleNewSession}
-      />
-
-      <div className="flex-1 flex flex-col">
-        <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="px-6 py-4 flex items-center gap-4">
-            <Logo size="sm" showText={false} />
-            <div className="flex-1">
-              <h1 className="text-xl font-serif font-semibold">
-                {therapyTitles[therapyType]}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Your personal healing session
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setVoiceGender(voiceGender === "female" ? "male" : "female")}
-                className="text-xs"
-              >
-                {voiceGender === "female" ? "♀ Female" : "♂ Male"}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  if (isSpeaking) {
-                    stopSpeaking();
-                  } else {
-                    setVoiceEnabled(!voiceEnabled);
-                  }
-                }}
-                className="shrink-0"
-              >
-                {isSpeaking ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : voiceEnabled ? (
-                  <Volume2 className="w-4 h-4" />
-                ) : (
-                  <VolumeX className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-soft">
+      {/* Header */}
+      <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
+        <div className="px-6 py-4 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/home")}
+            className="shrink-0"
+          >
+            <Home className="w-5 h-5" />
+          </Button>
+          <Logo size="sm" showText={false} />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-serif font-semibold truncate">
+              {therapyTitles[therapyType]}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              with Maya 🌿
+            </p>
           </div>
-        </header>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setVoiceGender(voiceGender === "female" ? "male" : "female")}
+              className="text-xs"
+            >
+              {voiceGender === "female" ? "♀ Maya" : "♂ Marcus"}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              className="shrink-0"
+            >
+              {voiceEnabled ? (
+                <Volume2 className="w-4 h-4" />
+              ) : (
+                <VolumeX className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </header>
 
-        <main className="flex-1 px-6 py-6 overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-4 mb-6">
+      {/* Messages Area - Fixed height with scroll */}
+      <main className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="max-w-3xl mx-auto space-y-4">
             {messages.map((message, index) => (
               <div
                 key={index}
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <Card
-                  className={`max-w-[80%] p-4 ${
+                  className={`max-w-[85%] p-4 ${
                     message.role === "user"
                       ? "bg-gradient-calm text-white border-0"
                       : "bg-card"
@@ -362,16 +417,29 @@ const Chat = () => {
                     {message.content}
                   </p>
                   {message.role === "assistant" && voiceEnabled && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 h-7 text-xs opacity-60 hover:opacity-100"
-                      onClick={() => speakText(message.content)}
-                      disabled={isSpeaking}
-                    >
-                      <Volume2 className="w-3 h-3 mr-1" />
-                      Play
-                    </Button>
+                    <div className="flex gap-2 mt-2">
+                      {isSpeaking ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs opacity-60 hover:opacity-100"
+                          onClick={stopSpeaking}
+                        >
+                          <Square className="w-3 h-3 mr-1" />
+                          Stop
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs opacity-60 hover:opacity-100"
+                          onClick={() => speakText(message.content)}
+                        >
+                          <Play className="w-3 h-3 mr-1" />
+                          Play
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </Card>
               </div>
@@ -389,8 +457,11 @@ const Chat = () => {
             )}
             <div ref={messagesEndRef} />
           </div>
+        </div>
 
-          <div className="flex gap-2 items-end">
+        {/* Input Area - Fixed at bottom */}
+        <div className="shrink-0 border-t border-border/50 bg-background/80 backdrop-blur-sm px-6 py-4">
+          <div className="max-w-3xl mx-auto flex gap-2">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -407,8 +478,8 @@ const Chat = () => {
               <Send className="w-5 h-5" />
             </Button>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };

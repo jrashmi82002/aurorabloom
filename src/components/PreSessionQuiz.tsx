@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -8,11 +8,13 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PreSessionQuizProps {
   userId: string;
   therapyType: string;
   onComplete: (quizData: QuizData) => void;
+  hasExistingProfile?: boolean;
 }
 
 export interface QuizData {
@@ -295,9 +297,10 @@ const getTherapySpecificContent = (therapyType: string) => {
   return content[therapyType] || content.talk_therapy;
 };
 
-export const PreSessionQuiz = ({ userId, therapyType, onComplete }: PreSessionQuizProps) => {
-  const [step, setStep] = useState(1);
+export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingProfile = false }: PreSessionQuizProps) => {
+  const [step, setStep] = useState(hasExistingProfile ? 2 : 1);
   const [loading, setLoading] = useState(false);
+  const [profileData, setProfileData] = useState<{ ageGroup: string; genderIdentity: string } | null>(null);
   const { toast } = useToast();
 
   const therapyContent = getTherapySpecificContent(therapyType);
@@ -312,6 +315,32 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete }: PreSessionQu
     customNotes: "",
     specificConcerns: [],
   });
+
+  // Load existing profile data if available
+  useEffect(() => {
+    if (hasExistingProfile) {
+      const fetchProfile = async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("age_group, gender_identity")
+          .eq("id", userId)
+          .single();
+
+        if (data) {
+          setProfileData({
+            ageGroup: data.age_group || "",
+            genderIdentity: data.gender_identity || "",
+          });
+          setQuizData((prev) => ({
+            ...prev,
+            ageGroup: data.age_group || "",
+            genderIdentity: data.gender_identity || "",
+          }));
+        }
+      };
+      fetchProfile();
+    }
+  }, [hasExistingProfile, userId]);
 
   const handleGoalToggle = (goal: string) => {
     setQuizData((prev) => ({
@@ -363,7 +392,9 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete }: PreSessionQu
     }
   };
 
-  const totalSteps = 5;
+  // Adjust total steps if we skip demographics
+  const totalSteps = hasExistingProfile ? 4 : 5;
+  const displayStep = hasExistingProfile ? step - 1 : step;
 
   return (
     <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-4">
@@ -374,14 +405,16 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete }: PreSessionQu
           </div>
           <CardTitle className="text-2xl font-serif">Before We Begin</CardTitle>
           <CardDescription>
-            Help me understand you better so I can personalize our session
+            {hasExistingProfile 
+              ? "Let's check in on how you're feeling today"
+              : "Help me understand you better so I can personalize our session"}
           </CardDescription>
           <div className="flex gap-1 justify-center mt-4">
             {Array.from({ length: totalSteps }).map((_, i) => (
               <div
                 key={i}
                 className={`h-2 w-10 rounded-full transition-colors ${
-                  i + 1 <= step ? "bg-primary" : "bg-muted"
+                  i + 1 <= displayStep ? "bg-primary" : "bg-muted"
                 }`}
               />
             ))}
@@ -389,7 +422,7 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete }: PreSessionQu
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {step === 1 && (
+          {step === 1 && !hasExistingProfile && (
             <div className="space-y-6">
               <div className="space-y-3">
                 <Label>What's your age group?</Label>
@@ -537,7 +570,7 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete }: PreSessionQu
           )}
 
           <div className="flex gap-3">
-            {step > 1 && (
+            {step > (hasExistingProfile ? 2 : 1) && (
               <Button
                 variant="outline"
                 onClick={() => setStep(step - 1)}
@@ -547,7 +580,7 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete }: PreSessionQu
                 Back
               </Button>
             )}
-            {step < totalSteps ? (
+            {step < 5 ? (
               <Button
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}
