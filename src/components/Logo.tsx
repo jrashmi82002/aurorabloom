@@ -21,44 +21,98 @@ export const Logo = ({ className, size = "md", showText = true }: LogoProps) => 
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Leaf shape */}
+        {/* Flowing leaf with organic curves */}
+        <defs>
+          <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(150, 50%, 55%)" />
+            <stop offset="50%" stopColor="hsl(160, 45%, 50%)" />
+            <stop offset="100%" stopColor="hsl(170, 40%, 45%)" />
+          </linearGradient>
+        </defs>
+        
+        {/* Main flowing leaf shape - organic and curved */}
         <path
-          d="M50 10 C20 30, 15 60, 50 90 C85 60, 80 30, 50 10"
-          fill="currentColor"
-          opacity="0.9"
+          d="M50 8 
+             C25 15, 12 35, 15 55 
+             C18 75, 35 88, 50 92 
+             C65 88, 82 75, 85 55 
+             C88 35, 75 15, 50 8"
+          fill="url(#leafGradient)"
         />
-        {/* Center vein */}
+        
+        {/* Curved stem flowing through */}
         <path
-          d="M50 20 L50 80"
+          d="M50 92 
+             C50 85, 48 75, 50 65 
+             C52 55, 48 45, 50 35 
+             C52 25, 50 15, 50 8"
           stroke="hsl(var(--background))"
-          strokeWidth="3"
+          strokeWidth="2.5"
           strokeLinecap="round"
-          opacity="0.6"
+          fill="none"
+          opacity="0.7"
         />
-        {/* Side veins */}
+        
+        {/* Flowing side veins - left */}
         <path
-          d="M50 35 L35 45 M50 50 L30 58 M50 65 L38 72"
+          d="M50 28 C42 32, 32 38, 25 42"
           stroke="hsl(var(--background))"
-          strokeWidth="2"
+          strokeWidth="1.5"
           strokeLinecap="round"
+          fill="none"
           opacity="0.4"
         />
         <path
-          d="M50 35 L65 45 M50 50 L70 58 M50 65 L62 72"
+          d="M50 45 C40 50, 28 55, 22 60"
           stroke="hsl(var(--background))"
-          strokeWidth="2"
+          strokeWidth="1.5"
           strokeLinecap="round"
+          fill="none"
           opacity="0.4"
         />
-        {/* Glow effect */}
+        <path
+          d="M50 62 C42 66, 34 70, 28 74"
+          stroke="hsl(var(--background))"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.4"
+        />
+        
+        {/* Flowing side veins - right */}
+        <path
+          d="M50 28 C58 32, 68 38, 75 42"
+          stroke="hsl(var(--background))"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.4"
+        />
+        <path
+          d="M50 45 C60 50, 72 55, 78 60"
+          stroke="hsl(var(--background))"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.4"
+        />
+        <path
+          d="M50 62 C58 66, 66 70, 72 74"
+          stroke="hsl(var(--background))"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.4"
+        />
+        
+        {/* Subtle inner glow */}
         <ellipse
           cx="50"
           cy="50"
-          rx="25"
-          ry="35"
-          fill="hsl(var(--primary))"
-          opacity="0.2"
-          filter="blur(10px)"
+          rx="20"
+          ry="30"
+          fill="hsl(150, 60%, 70%)"
+          opacity="0.15"
         />
       </svg>
       {showText && (

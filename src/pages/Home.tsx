@@ -7,6 +7,7 @@ import { Leaf, LogOut, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Bra
 import { User } from "@supabase/supabase-js";
 import { ProAccessRequest } from "@/components/ProAccessRequest";
 import { Logo } from "@/components/Logo";
+import { SessionHistorySidebar } from "@/components/SessionHistorySidebar";
 
 const therapyTypes = [
   {
@@ -124,60 +125,68 @@ const Home = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-soft">
-      <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+    <div className="h-screen flex overflow-hidden bg-gradient-soft">
+      {/* Left Sidebar - Session History */}
+      <aside className="w-72 border-r border-border/50 bg-background/80 backdrop-blur-sm flex flex-col shrink-0">
+        <div className="p-4 border-b border-border/50">
           <Logo size="md" />
-          <Button variant="outline" onClick={handleSignOut} className="gap-2">
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
         </div>
-      </header>
+        <div className="flex-1 overflow-hidden">
+          <SessionHistorySidebar userId={user.id} />
+        </div>
+      </aside>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto text-center mb-12 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-serif font-bold bg-gradient-calm bg-clip-text text-transparent">
-            Your Journey to Wellness
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Choose a therapy path that resonates with you. Our AI-powered therapist will guide you 
-            through personalized sessions designed to help you heal and grow.
-          </p>
-        </div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
+          <div className="px-6 py-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-serif font-bold">Choose Your Path</h1>
+              <p className="text-sm text-muted-foreground">Select a therapy type to begin or continue</p>
+            </div>
+            <Button variant="outline" onClick={handleSignOut} className="gap-2">
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {therapyTypes.map((therapy) => {
-            const Icon = therapy.icon;
-            return (
-              <Card
-                key={therapy.id}
-                className="group hover:shadow-calm transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0"
-                onClick={() => startSession(therapy.id)}
-              >
-                <CardHeader className="space-y-4">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${therapy.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                    <Icon className="w-7 h-7 text-white" />
-                  </div>
-                  <CardTitle className="text-xl font-serif">{therapy.title}</CardTitle>
-                  <CardDescription className="text-base">
-                    {therapy.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full bg-gradient-calm hover:opacity-90 transition-opacity">
-                    Begin Session
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {therapyTypes.map((therapy) => {
+                const Icon = therapy.icon;
+                return (
+                  <Card
+                    key={therapy.id}
+                    className="group hover:shadow-calm transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0"
+                    onClick={() => startSession(therapy.id)}
+                  >
+                    <CardHeader className="space-y-3 pb-3">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${therapy.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <CardTitle className="text-lg font-serif">{therapy.title}</CardTitle>
+                      <CardDescription className="text-sm line-clamp-2">
+                        {therapy.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <Button className="w-full bg-gradient-calm hover:opacity-90 transition-opacity" size="sm">
+                        Begin Session
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
 
-        <div className="max-w-2xl mx-auto mt-16">
-          <ProAccessRequest />
-        </div>
-      </main>
+            <div className="mt-12">
+              <ProAccessRequest />
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
