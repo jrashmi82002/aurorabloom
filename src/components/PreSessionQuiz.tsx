@@ -28,22 +28,6 @@ export interface QuizData {
   specificConcerns: string[];
 }
 
-const ageGroups = [
-  { value: "under-18", label: "Under 18" },
-  { value: "18-24", label: "18-24 years" },
-  { value: "25-34", label: "25-34 years" },
-  { value: "35-44", label: "35-44 years" },
-  { value: "45-54", label: "45-54 years" },
-  { value: "55+", label: "55+ years" },
-];
-
-const genderOptions = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "non-binary", label: "Non-binary" },
-  { value: "prefer-not-to-say", label: "Prefer not to say" },
-];
-
 const experienceOptions = [
   { value: "first-time", label: "First time trying therapy" },
   { value: "some", label: "Tried it a few times before" },
@@ -298,7 +282,7 @@ const getTherapySpecificContent = (therapyType: string) => {
 };
 
 export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingProfile = false }: PreSessionQuizProps) => {
-  const [step, setStep] = useState(hasExistingProfile ? 2 : 1);
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState<{ ageGroup: string; genderIdentity: string } | null>(null);
   const { toast } = useToast();
@@ -316,31 +300,29 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
     specificConcerns: [],
   });
 
-  // Load existing profile data if available
+  // Load existing profile data
   useEffect(() => {
-    if (hasExistingProfile) {
-      const fetchProfile = async () => {
-        const { data } = await supabase
-          .from("profiles")
-          .select("age_group, gender_identity")
-          .eq("id", userId)
-          .single();
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("age_group, gender_identity")
+        .eq("id", userId)
+        .single();
 
-        if (data) {
-          setProfileData({
-            ageGroup: data.age_group || "",
-            genderIdentity: data.gender_identity || "",
-          });
-          setQuizData((prev) => ({
-            ...prev,
-            ageGroup: data.age_group || "",
-            genderIdentity: data.gender_identity || "",
-          }));
-        }
-      };
-      fetchProfile();
-    }
-  }, [hasExistingProfile, userId]);
+      if (data) {
+        setProfileData({
+          ageGroup: data.age_group || "",
+          genderIdentity: data.gender_identity || "",
+        });
+        setQuizData((prev) => ({
+          ...prev,
+          ageGroup: data.age_group || "",
+          genderIdentity: data.gender_identity || "",
+        }));
+      }
+    };
+    fetchProfile();
+  }, [userId]);
 
   const handleGoalToggle = (goal: string) => {
     setQuizData((prev) => ({
@@ -378,23 +360,19 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
   const canProceed = () => {
     switch (step) {
       case 1:
-        return quizData.ageGroup && quizData.genderIdentity;
+        return true; // Mood step - always can proceed
       case 2:
-        return true;
-      case 3:
         return quizData.therapyGoals.length > 0;
-      case 4:
+      case 3:
         return quizData.specificConcerns.length > 0;
-      case 5:
+      case 4:
         return quizData.previousExperience;
       default:
         return true;
     }
   };
 
-  // Adjust total steps if we skip demographics
-  const totalSteps = hasExistingProfile ? 4 : 5;
-  const displayStep = hasExistingProfile ? step - 1 : step;
+  const totalSteps = 5;
 
   return (
     <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-4">
@@ -405,16 +383,14 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
           </div>
           <CardTitle className="text-2xl font-serif">Before We Begin</CardTitle>
           <CardDescription>
-            {hasExistingProfile 
-              ? "Let's check in on how you're feeling today"
-              : "Help me understand you better so I can personalize our session"}
+            Let's check in on how you're feeling today
           </CardDescription>
           <div className="flex gap-1 justify-center mt-4">
             {Array.from({ length: totalSteps }).map((_, i) => (
               <div
                 key={i}
                 className={`h-2 w-10 rounded-full transition-colors ${
-                  i + 1 <= displayStep ? "bg-primary" : "bg-muted"
+                  i + 1 <= step ? "bg-primary" : "bg-muted"
                 }`}
               />
             ))}
@@ -422,45 +398,7 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {step === 1 && !hasExistingProfile && (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label>What's your age group?</Label>
-                <RadioGroup
-                  value={quizData.ageGroup}
-                  onValueChange={(v) => setQuizData({ ...quizData, ageGroup: v })}
-                >
-                  {ageGroups.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <RadioGroupItem value={option.value} id={`age-${option.value}`} />
-                      <Label htmlFor={`age-${option.value}`} className="cursor-pointer">
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-3">
-                <Label>How do you identify?</Label>
-                <RadioGroup
-                  value={quizData.genderIdentity}
-                  onValueChange={(v) => setQuizData({ ...quizData, genderIdentity: v })}
-                >
-                  {genderOptions.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <RadioGroupItem value={option.value} id={`gender-${option.value}`} />
-                      <Label htmlFor={`gender-${option.value}`} className="cursor-pointer">
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
+          {step === 1 && (
             <div className="space-y-8">
               <div className="space-y-4">
                 <Label>{therapyContent.moodLabel} (1-10)</Label>
@@ -500,20 +438,45 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
             </div>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <div className="space-y-4">
-              <Label>What would you like to work on today?</Label>
+              <Label>What would you like to focus on? (Select all that apply)</Label>
               <div className="grid grid-cols-1 gap-2">
                 {therapyContent.goals.map((goal) => (
-                  <Button
+                  <button
                     key={goal}
                     type="button"
-                    variant={quizData.therapyGoals.includes(goal) ? "default" : "outline"}
-                    className="justify-start h-auto py-3 px-4 text-left"
                     onClick={() => handleGoalToggle(goal)}
+                    className={`p-3 text-sm text-left rounded-lg border transition-all ${
+                      quizData.therapyGoals.includes(goal)
+                        ? "bg-primary/10 border-primary text-foreground"
+                        : "border-border hover:border-primary/50"
+                    }`}
                   >
                     {goal}
-                  </Button>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <Label>Any specific concerns? (Select all that apply)</Label>
+              <div className="grid grid-cols-1 gap-2">
+                {therapyContent.concerns.map((concern) => (
+                  <button
+                    key={concern}
+                    type="button"
+                    onClick={() => handleConcernToggle(concern)}
+                    className={`p-3 text-sm text-left rounded-lg border transition-all ${
+                      quizData.specificConcerns.includes(concern)
+                        ? "bg-primary/10 border-primary text-foreground"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {concern}
+                  </button>
                 ))}
               </div>
             </div>
@@ -521,79 +484,64 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
 
           {step === 4 && (
             <div className="space-y-4">
-              <Label>What's been on your mind? (Select any that apply)</Label>
-              <div className="grid grid-cols-1 gap-2">
-                {therapyContent.concerns.map((concern) => (
-                  <Button
-                    key={concern}
-                    type="button"
-                    variant={quizData.specificConcerns.includes(concern) ? "default" : "outline"}
-                    className="justify-start h-auto py-3 px-4 text-left"
-                    onClick={() => handleConcernToggle(concern)}
-                  >
-                    {concern}
-                  </Button>
+              <Label>How familiar are you with therapy?</Label>
+              <RadioGroup
+                value={quizData.previousExperience}
+                onValueChange={(v) => setQuizData({ ...quizData, previousExperience: v })}
+              >
+                {experienceOptions.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={option.value} id={`exp-${option.value}`} />
+                    <Label htmlFor={`exp-${option.value}`} className="cursor-pointer">
+                      {option.label}
+                    </Label>
+                  </div>
                 ))}
-              </div>
+              </RadioGroup>
             </div>
           )}
 
           {step === 5 && (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label>Have you tried therapy before?</Label>
-                <RadioGroup
-                  value={quizData.previousExperience}
-                  onValueChange={(v) => setQuizData({ ...quizData, previousExperience: v })}
-                >
-                  {experienceOptions.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <RadioGroupItem value={option.value} id={`exp-${option.value}`} />
-                      <Label htmlFor={`exp-${option.value}`} className="cursor-pointer">
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-3">
-                <Label>Anything else you'd like me to know? (Optional)</Label>
-                <Textarea
-                  placeholder="Feel free to share anything that might help me support you better..."
-                  value={quizData.customNotes}
-                  onChange={(e) => setQuizData({ ...quizData, customNotes: e.target.value })}
-                  rows={4}
-                />
-              </div>
+            <div className="space-y-4">
+              <Label>Anything else you'd like to share? (Optional)</Label>
+              <Textarea
+                placeholder="Feel free to add any thoughts, context, or specific things you'd like to explore..."
+                value={quizData.customNotes}
+                onChange={(e) => setQuizData({ ...quizData, customNotes: e.target.value })}
+                rows={4}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                This helps your therapist understand you better and personalize the session.
+              </p>
             </div>
           )}
 
-          <div className="flex gap-3">
-            {step > (hasExistingProfile ? 2 : 1) && (
+          <div className="flex gap-3 pt-4">
+            {step > 1 && (
               <Button
                 variant="outline"
-                onClick={() => setStep(step - 1)}
+                onClick={() => setStep((s) => s - 1)}
                 className="flex-1"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
             )}
-            {step < 5 ? (
+            {step < totalSteps ? (
               <Button
-                onClick={() => setStep(step + 1)}
+                onClick={() => setStep((s) => s + 1)}
                 disabled={!canProceed()}
-                className="flex-1"
+                className="flex-1 bg-gradient-calm hover:opacity-90"
               >
-                Next
+                Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={loading || !canProceed()}
-                className="flex-1 bg-gradient-calm"
+                disabled={loading}
+                className="flex-1 bg-gradient-calm hover:opacity-90"
               >
                 {loading ? (
                   <>
@@ -601,7 +549,10 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
                     Starting...
                   </>
                 ) : (
-                  "Start Session"
+                  <>
+                    Start Session
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
                 )}
               </Button>
             )}

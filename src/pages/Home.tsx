@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, LogOut, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, Zap } from "lucide-react";
+import { Leaf, LogOut, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, Zap, PanelLeftClose, PanelLeft, FileText } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { ProAccessRequest } from "@/components/ProAccessRequest";
 import { Logo } from "@/components/Logo";
@@ -91,6 +91,7 @@ const therapyTypes = [
 
 const Home = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -126,10 +127,13 @@ const Home = () => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gradient-soft">
-      {/* Left Sidebar - Session History */}
-      <aside className="w-72 border-r border-border/50 bg-background/80 backdrop-blur-sm flex flex-col shrink-0">
-        <div className="p-4 border-b border-border/50">
+      {/* Collapsible Left Sidebar - Session History */}
+      <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-border/50 bg-background/80 backdrop-blur-sm flex flex-col shrink-0 transition-all duration-300 overflow-hidden`}>
+        <div className="p-4 border-b border-border/50 flex items-center justify-between">
           <Logo size="md" />
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
+            <PanelLeftClose className="w-4 h-4" />
+          </Button>
         </div>
         <div className="flex-1 overflow-hidden">
           <SessionHistorySidebar userId={user.id} />
@@ -137,17 +141,30 @@ const Home = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
           <div className="px-6 py-4 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-serif font-bold">Choose Your Path</h1>
-              <p className="text-sm text-muted-foreground">Select a therapy type to begin or continue</p>
+            <div className="flex items-center gap-3">
+              {!sidebarOpen && (
+                <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+                  <PanelLeft className="w-5 h-5" />
+                </Button>
+              )}
+              <div>
+                <h1 className="text-2xl font-serif font-bold">Choose Your Path</h1>
+                <p className="text-sm text-muted-foreground">Select a therapy type to begin or continue</p>
+              </div>
             </div>
-            <Button variant="outline" onClick={handleSignOut} className="gap-2">
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => navigate("/report")} className="gap-2">
+                <FileText className="w-4 h-4" />
+                Monthly Report
+              </Button>
+              <Button variant="outline" onClick={handleSignOut} className="gap-2">
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </header>
 
