@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, Volume2, VolumeX, Square, Home, Play } from "lucide-react";
+import { Send, Volume2, VolumeX, Square, Home, Play, PanelLeftClose, PanelLeft } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
 import { Logo } from "@/components/Logo";
+import { SessionHistorySidebar } from "@/components/SessionHistorySidebar";
 
 interface Message {
   role: "user" | "assistant";
@@ -30,6 +31,22 @@ const therapyTitles: Record<string, string> = {
   advanced_therapy: "Advanced Therapy",
 };
 
+// Therapist names per therapy type and gender
+const getTherapistName = (therapyType: string, gender: "male" | "female") => {
+  if (therapyType === "yogic") {
+    return gender === "female" ? "Jaya" : "Vishesh";
+  }
+  return gender === "female" ? "Maya" : "Marcus";
+};
+
+// Generate session title based on date/time
+const generateSessionTitle = (therapyType: string) => {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${therapyTitles[therapyType]} - ${dateStr} ${timeStr}`;
+};
+
 const Chat = () => {
   const [searchParams] = useSearchParams();
   const therapyType = (searchParams.get("type") || "talk_therapy") as 
@@ -49,6 +66,7 @@ const Chat = () => {
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -88,7 +106,7 @@ const Chat = () => {
         .insert({
           user_id: userId,
           therapy_type: therapyType as any,
-          title: `${therapyTitles[therapyType]} Session`,
+          title: generateSessionTitle(therapyType),
           has_quiz_completed: true,
         })
         .select()
@@ -109,7 +127,7 @@ const Chat = () => {
       });
 
       // Update profile with demographics if not already set
-      if (!hasExistingProfile) {
+      if (!hasExistingProfile && quiz.ageGroup && quiz.genderIdentity) {
         await supabase.from("profiles").upsert({
           id: userId,
           age_group: quiz.ageGroup,
@@ -203,6 +221,7 @@ const Chat = () => {
           quizData: quiz,
           hasPreviousSessions: previousSessions && previousSessions.length > 0,
           messageCount: 0,
+          voiceGender,
         },
       });
 
@@ -291,6 +310,7 @@ const Chat = () => {
           messages: [...messages, userMessage],
           quizData,
           messageCount: messages.length + 1,
+          voiceGender,
         },
       });
 
@@ -337,6 +357,8 @@ const Chat = () => {
     speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
   }, []);
 
+  const therapistName = getTherapistName(therapyType, voiceGender);
+
   if (!user) return null;
 
   if (showQuiz && !existingSessionId) {
@@ -351,135 +373,156 @@ const Chat = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gradient-soft">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
-        <div className="px-6 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/home")}
-            className="shrink-0"
-          >
-            <Home className="w-5 h-5" />
+    <div className="h-screen flex overflow-hidden bg-gradient-soft">
+      {/* Collapsible Sidebar */}
+      <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-border/50 bg-background/80 backdrop-blur-sm flex flex-col shrink-0 transition-all duration-300 overflow-hidden`}>
+        <div className="p-4 border-b border-border/50 flex items-center justify-between">
+          <Logo size="sm" />
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
+            <PanelLeftClose className="w-4 h-4" />
           </Button>
-          <Logo size="sm" showText={false} />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-serif font-semibold truncate">
-              {therapyTitles[therapyType]}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              with Maya 🌿
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <SessionHistorySidebar userId={user.id} />
+        </div>
+      </aside>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Header */}
+        <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
+          <div className="px-4 py-3 flex items-center gap-3">
+            {!sidebarOpen && (
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="shrink-0">
+                <PanelLeft className="w-5 h-5" />
+              </Button>
+            )}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setVoiceGender(voiceGender === "female" ? "male" : "female")}
-              className="text-xs"
-            >
-              {voiceGender === "female" ? "♀ Maya" : "♂ Marcus"}
-            </Button>
-            <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              onClick={() => navigate("/")}
               className="shrink-0"
             >
-              {voiceEnabled ? (
-                <Volume2 className="w-4 h-4" />
-              ) : (
-                <VolumeX className="w-4 h-4" />
-              )}
+              <Home className="w-5 h-5" />
             </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Messages Area - Fixed height with scroll */}
-      <main className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="max-w-3xl mx-auto space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            <Logo size="sm" showText={false} />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-serif font-semibold truncate">
+                {therapyTitles[therapyType]}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                with {therapistName} 🌿
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVoiceGender(voiceGender === "female" ? "male" : "female")}
+                className="text-xs"
               >
-                <Card
-                  className={`max-w-[85%] p-4 ${
-                    message.role === "user"
-                      ? "bg-gradient-calm text-white border-0"
-                      : "bg-card"
-                  }`}
-                >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.content}
-                  </p>
-                  {message.role === "assistant" && voiceEnabled && (
-                    <div className="flex gap-2 mt-2">
-                      {isSpeaking ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs opacity-60 hover:opacity-100"
-                          onClick={stopSpeaking}
-                        >
-                          <Square className="w-3 h-3 mr-1" />
-                          Stop
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs opacity-60 hover:opacity-100"
-                          onClick={() => speakText(message.content)}
-                        >
-                          <Play className="w-3 h-3 mr-1" />
-                          Play
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </Card>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <Card className="max-w-[80%] p-4 bg-card">
-                  <div className="flex gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-150" />
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-300" />
-                  </div>
-                </Card>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+                {voiceGender === "female" ? `♀ ${getTherapistName(therapyType, "female")}` : `♂ ${getTherapistName(therapyType, "male")}`}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                className="shrink-0"
+              >
+                {voiceEnabled ? (
+                  <Volume2 className="w-4 h-4" />
+                ) : (
+                  <VolumeX className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        </header>
 
-        {/* Input Area - Fixed at bottom */}
-        <div className="shrink-0 border-t border-border/50 bg-background/80 backdrop-blur-sm px-6 py-4">
-          <div className="max-w-3xl mx-auto flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Share your thoughts..."
-              className="flex-1 h-12 transition-all duration-300 focus:shadow-gentle"
-              disabled={loading}
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={loading || !input.trim()}
-              className="h-12 px-6 bg-gradient-calm hover:opacity-90 transition-opacity"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
+        {/* Messages Area - Fixed height with scroll */}
+        <main className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="max-w-3xl mx-auto space-y-4">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <Card
+                    className={`max-w-[85%] p-4 ${
+                      message.role === "user"
+                        ? "bg-gradient-calm text-white border-0"
+                        : "bg-card"
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                    {message.role === "assistant" && voiceEnabled && (
+                      <div className="flex gap-2 mt-2">
+                        {isSpeaking ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs opacity-60 hover:opacity-100"
+                            onClick={stopSpeaking}
+                          >
+                            <Square className="w-3 h-3 mr-1" />
+                            Stop
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs opacity-60 hover:opacity-100"
+                            onClick={() => speakText(message.content)}
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            Play
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <Card className="max-w-[80%] p-4 bg-card">
+                    <div className="flex gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-150" />
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-300" />
+                    </div>
+                  </Card>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
           </div>
-        </div>
-      </main>
+
+          {/* Input Area - Fixed at bottom */}
+          <div className="shrink-0 border-t border-border/50 bg-background/80 backdrop-blur-sm px-4 py-3">
+            <div className="max-w-3xl mx-auto flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Share your thoughts..."
+                className="flex-1 h-12 transition-all duration-300 focus:shadow-gentle"
+                disabled={loading}
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={loading || !input.trim()}
+                className="h-12 px-6 bg-gradient-calm hover:opacity-90 transition-opacity"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
