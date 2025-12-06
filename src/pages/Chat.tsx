@@ -253,29 +253,47 @@ const Chat = () => {
 
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
-
-    // Stop any ongoing speech first
     speechSynthesis.cancel();
-    
     setIsSpeaking(true);
     try {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.95;
-      utterance.pitch = voiceGender === "female" ? 1.1 : 0.9;
-
+      
       const voices = speechSynthesis.getVoices();
-      const preferredVoice =
-        voices.find((v) =>
-          voiceGender === "female"
-            ? v.name.includes("Female") || v.name.includes("Samantha") || v.name.includes("Victoria")
-            : v.name.includes("Male") || v.name.includes("Daniel") || v.name.includes("Alex")
-        ) || voices.find((v) => v.lang.startsWith("en"));
-
+      let preferredVoice;
+      
+      // Maya = female voice, Marcus = American male, Jaya = Indian female, Vishesh = Indian male
+      if (therapyType === "yogic") {
+        if (voiceGender === "female") {
+          // Jaya - Indian female voice
+          utterance.pitch = 1.15;
+          preferredVoice = voices.find(v => v.lang.includes("hi") || v.lang.includes("en-IN")) 
+            || voices.find(v => v.name.includes("Veena") || v.name.includes("Lekha"))
+            || voices.find(v => v.name.includes("Female") || v.name.includes("Samantha"));
+        } else {
+          // Vishesh - Indian male voice
+          utterance.pitch = 0.85;
+          preferredVoice = voices.find(v => v.lang.includes("hi") || v.lang.includes("en-IN"))
+            || voices.find(v => v.name.includes("Ravi"))
+            || voices.find(v => v.name.includes("Male") || v.name.includes("Daniel"));
+        }
+      } else {
+        if (voiceGender === "female") {
+          // Maya - Female voice
+          utterance.pitch = 1.1;
+          preferredVoice = voices.find(v => v.name.includes("Samantha") || v.name.includes("Karen") || v.name.includes("Victoria"))
+            || voices.find(v => v.name.toLowerCase().includes("female"));
+        } else {
+          // Marcus - American male voice
+          utterance.pitch = 0.9;
+          preferredVoice = voices.find(v => v.name.includes("Alex") || v.name.includes("Tom") || v.name.includes("Daniel"))
+            || voices.find(v => v.lang === "en-US" && v.name.toLowerCase().includes("male"));
+        }
+      }
+      
       if (preferredVoice) utterance.voice = preferredVoice;
-
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
-
       speechSynthesis.speak(utterance);
     } catch (error) {
       console.error("Speech error:", error);
@@ -374,16 +392,7 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gradient-soft">
-      {/* Collapsible Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-72' : 'w-0'} border-r border-border/50 bg-background/80 backdrop-blur-sm flex flex-col shrink-0 transition-all duration-300 overflow-hidden`}>
-        <div className="p-4 border-b border-border/50 flex items-center justify-between">
-          <Logo size="sm" />
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
-            <PanelLeftClose className="w-4 h-4" />
-          </Button>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <SessionHistorySidebar userId={user.id} />
+      <AppSidebar userId={user.id} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
         </div>
       </aside>
 
