@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { Users, MessageSquare, Crown, TrendingUp } from "lucide-react";
+import { Users, MessageSquare, Crown, TrendingUp, AlertTriangle, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface AnalyticsData {
   totalUsers: number;
@@ -11,6 +12,8 @@ interface AnalyticsData {
   totalMessages: number;
   therapyTypeDistribution: { name: string; value: number }[];
   dailyActivity: { date: string; sessions: number; messages: number }[];
+  topEngagedUsers: { email: string; sessions: number; messages: number }[];
+  usersNeedingHelp: { email: string; reason: string; severity: string }[];
 }
 
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
@@ -100,6 +103,107 @@ export const AdminUserAnalytics = () => {
         }))
         .reverse();
 
+      // Fetch top 5 engaged users (most sessions + messages)
+      const { data: allSessions } = await supabase
+        .from("therapy_sessions")
+        .select("user_id, message_count");
+
+      const userStats: Record<string, { sessions: number; messages: number }> = {};
+      allSessions?.forEach((s) => {
+        if (!userStats[s.user_id]) {
+          userStats[s.user_id] = { sessions: 0, messages: 0 };
+        }
+        userStats[s.user_id].sessions++;
+        userStats[s.user_id].messages += s.message_count || 0;
+      });
+
+      const topUserIds = Object.entries(userStats)
+        .sort((a, b) => (b[1].sessions + b[1].messages) - (a[1].sessions + a[1].messages))
+        .slice(0, 5)
+        .map(([id]) => id);
+
+      // Get emails for top users from auth (we'll use profiles as proxy)
+      const topEngagedUsers: { email: string; sessions: number; messages: number }[] = [];
+      for (const userId of topUserIds) {
+        const stats = userStats[userId];
+        // Get user email from pro_access_requests or use anonymized ID
+        const { data: request } = await supabase
+          .from("pro_access_requests")
+          .select("email")
+          .eq("user_id", userId)
+          .limit(1)
+          .single();
+
+        topEngagedUsers.push({
+          email: request?.email || `User ${userId.slice(0, 8)}...`,
+          sessions: stats.sessions,
+          messages: stats.messages,
+        });
+      }
+
+      // Analyze users needing professional help based on quiz responses
+      const { data: quizData } = await supabase
+        .from("quiz_responses")
+        .select("user_id, current_mood_scales, therapy_goals, custom_notes")
+        .order("created_at", { ascending: false });
+
+      const usersNeedingHelpMap: Record<string, { reason: string; severity: string }> = {};
+      
+      quizData?.forEach((q) => {
+        const scales = q.current_mood_scales as any;
+        const mood = scales?.mood || 5;
+        const stress = scales?.stress || 5;
+        const notes = q.custom_notes?.toLowerCase() || "";
+        const goals = q.therapy_goals || [];
+        
+        // Identify concerning patterns
+        let reason = "";
+        let severity = "medium";
+        
+        if (mood <= 2 || stress >= 8) {
+          reason = "Very low mood or extremely high stress levels";
+          severity = "high";
+        } else if (notes.includes("suicide") || notes.includes("harm") || notes.includes("hopeless")) {
+          reason = "Concerning language in session notes";
+          severity = "critical";
+        } else if (goals.includes("crisis_support") || goals.includes("trauma")) {
+          reason = "Seeking crisis or trauma support";
+          severity = "high";
+        } else if (mood <= 3 && stress >= 7) {
+          reason = "Combination of low mood and high stress";
+          severity = "medium";
+        }
+        
+        if (reason && !usersNeedingHelpMap[q.user_id]) {
+          usersNeedingHelpMap[q.user_id] = { reason, severity };
+        }
+      });
+
+      // Get top 5 users needing help
+      const usersNeedingHelp: { email: string; reason: string; severity: string }[] = [];
+      const helpUserIds = Object.entries(usersNeedingHelpMap)
+        .sort((a, b) => {
+          const severityOrder = { critical: 0, high: 1, medium: 2 };
+          return (severityOrder[a[1].severity as keyof typeof severityOrder] || 3) -
+                 (severityOrder[b[1].severity as keyof typeof severityOrder] || 3);
+        })
+        .slice(0, 5);
+
+      for (const [userId, data] of helpUserIds) {
+        const { data: request } = await supabase
+          .from("pro_access_requests")
+          .select("email")
+          .eq("user_id", userId)
+          .limit(1)
+          .single();
+
+        usersNeedingHelp.push({
+          email: request?.email || `User ${userId.slice(0, 8)}...`,
+          reason: data.reason,
+          severity: data.severity,
+        });
+      }
+
       setAnalytics({
         totalUsers: totalUsers || 0,
         proUsers: proUsers || 0,
@@ -107,6 +211,8 @@ export const AdminUserAnalytics = () => {
         totalMessages: totalMessages || 0,
         therapyTypeDistribution,
         dailyActivity,
+        topEngagedUsers,
+        usersNeedingHelp,
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -118,6 +224,14 @@ export const AdminUserAnalytics = () => {
   if (loading || !analytics) {
     return <div className="animate-pulse h-96 bg-muted rounded-lg" />;
   }
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "critical": return "bg-red-500 text-white";
+      case "high": return "bg-orange-500 text-white";
+      default: return "bg-yellow-500 text-white";
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -174,6 +288,70 @@ export const AdminUserAnalytics = () => {
                 <p className="text-2xl font-bold">{analytics.totalMessages}</p>
                 <p className="text-sm text-muted-foreground">Messages</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Engaged Users & Users Needing Help */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500" />
+              Top 5 Engaged Users
+            </CardTitle>
+            <CardDescription>Most active users by sessions and messages</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {analytics.topEngagedUsers.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No user data yet</p>
+              ) : (
+                analytics.topEngagedUsers.map((user, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-sm font-bold">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm font-medium truncate max-w-[150px]">{user.email}</span>
+                    </div>
+                    <div className="flex gap-2 text-xs">
+                      <Badge variant="secondary">{user.sessions} sessions</Badge>
+                      <Badge variant="outline">{user.messages} msgs</Badge>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-orange-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              Users Needing Professional Help
+            </CardTitle>
+            <CardDescription>Based on mood, stress, and session content analysis</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {analytics.usersNeedingHelp.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No concerning patterns detected</p>
+              ) : (
+                analytics.usersNeedingHelp.map((user, i) => (
+                  <div key={i} className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium truncate max-w-[180px]">{user.email}</span>
+                      <Badge className={getSeverityColor(user.severity)}>
+                        {user.severity}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{user.reason}</p>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
