@@ -252,35 +252,68 @@ const Diary = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Textarea
-                    placeholder="How are you feeling today? What's on your mind? Write freely..."
-                    value={currentEntry}
-                    onChange={(e) => setCurrentEntry(e.target.value)}
-                    className="min-h-[200px] resize-none border-blue-200/50 focus:border-blue-400 text-base leading-relaxed"
-                  />
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={saveEntry} 
-                      disabled={saving || !currentEntry.trim()}
-                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90"
-                    >
-                      {saving ? "Saving..." : "Save Entry"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={getTherapistInsight}
-                      disabled={loading || !currentEntry.trim()}
-                      className="gap-2 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                    >
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                  {isToday(selectedDate) ? (
+                    <>
+                      <Textarea
+                        placeholder="How are you feeling today? What's on your mind? Write freely..."
+                        value={currentEntry}
+                        onChange={(e) => setCurrentEntry(e.target.value)}
+                        className="min-h-[200px] resize-none border-blue-200/50 focus:border-blue-400 text-base leading-relaxed"
+                      />
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={saveEntry} 
+                          disabled={saving || !currentEntry.trim()}
+                          className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90"
+                        >
+                          {saving ? "Saving..." : "Save Entry"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={getTherapistInsight}
+                          disabled={loading || !currentEntry.trim()}
+                          className="gap-2 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                        >
+                          {loading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-4 h-4" />
+                          )}
+                          Get Therapist Insight
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      {currentEntry ? (
+                        <>
+                          <div className="p-4 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50">
+                            <p className="text-base leading-relaxed whitespace-pre-wrap">{currentEntry}</p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={getTherapistInsight}
+                            disabled={loading}
+                            className="gap-2 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                          >
+                            {loading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-4 h-4" />
+                            )}
+                            Get Therapist Insight
+                          </Button>
+                        </>
                       ) : (
-                        <Sparkles className="w-4 h-4" />
+                        <div className="text-center py-8 text-muted-foreground">
+                          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                          <p>No entry for this date.</p>
+                          <p className="text-sm mt-1">You can only write for today's date.</p>
+                        </div>
                       )}
-                      Get Therapist Insight
-                    </Button>
-                  </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
