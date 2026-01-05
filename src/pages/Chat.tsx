@@ -9,7 +9,7 @@ import { Send, Volume2, VolumeX, Square, Home, Play, PanelLeftClose, PanelLeft }
 import { User } from "@supabase/supabase-js";
 import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
 import { Logo } from "@/components/Logo";
-import { SessionHistorySidebar } from "@/components/SessionHistorySidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 interface Message {
   role: "user" | "assistant";
@@ -393,8 +393,6 @@ const Chat = () => {
   return (
     <div className="h-screen flex overflow-hidden bg-gradient-soft">
       <AppSidebar userId={user.id} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
-        </div>
-      </aside>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
