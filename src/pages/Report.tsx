@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
 import { Logo } from "@/components/Logo";
+import { CalmingIllustration } from "@/components/CalmingIllustration";
 import { ArrowLeft, Calendar, MessageCircle, TrendingUp, Sparkles, Loader2, Heart, Target, Brain, Lightbulb, CheckCircle } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
@@ -349,15 +350,11 @@ const Report = () => {
           </div>
         ) : stats ? (
           <div className="space-y-6">
-            {/* Journey Image */}
+            {/* Journey Illustration - Using SVG instead of external image */}
             <Card className="overflow-hidden">
-              <div className="relative h-48 md:h-64">
-                <img 
-                  src={stats.journeyImage} 
-                  alt="Your healing journey" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
+              <div className="relative h-48 md:h-64 bg-gradient-to-br from-primary/10 to-accent/10">
+                <CalmingIllustration moodTrend={stats.moodTrend} className="w-full h-full" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
                 <div className="absolute bottom-4 left-4 right-4">
                   <h2 className="text-2xl font-serif font-bold text-foreground">
                     {format(selectedMonth, "MMMM")} - Your Healing Journey

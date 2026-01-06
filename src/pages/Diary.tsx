@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { PanelLeft, BookOpen, Sparkles, Plus, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -161,7 +162,7 @@ const Diary = () => {
                 <PanelLeft className="w-5 h-5" />
               </Button>
             )}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
@@ -170,6 +171,7 @@ const Diary = () => {
                 <p className="text-sm text-muted-foreground">Your private space for reflection</p>
               </div>
             </div>
+            <ThemeToggle />
           </div>
         </header>
 

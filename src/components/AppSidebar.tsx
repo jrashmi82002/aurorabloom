@@ -31,13 +31,11 @@ const therapyLabels: Record<string, string> = {
   physiotherapy: "Physio",
   ayurveda: "Ayurveda",
   talk_therapy: "Talk",
-  genz_therapy: "GenZ",
   female_therapy: "Her",
   male_therapy: "Him",
   older_therapy: "Senior",
   children_therapy: "Kids",
-  millennial_therapy: "Millennial",
-  advanced_therapy: "Advanced",
+  advanced_therapy: "Custom",
 };
 
 // Generate creative session names
@@ -197,17 +195,7 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
         </Button>
       </div>
 
-      {/* Navigation Links */}
-      <div className="p-3 space-y-1 border-b border-border/50">
-        <Button
-          variant={location.pathname === "/" ? "secondary" : "ghost"}
-          className="w-full justify-start gap-2 h-9"
-          onClick={() => navigate("/")}
-        >
-          <Home className="w-4 h-4" />
-          Home
-        </Button>
-      </div>
+      {/* Navigation Links - Removed Home button since Logo is clickable */}
 
       {/* Sessions Area - Scrollable middle section */}
       <ScrollArea className="flex-1">
@@ -304,26 +292,38 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
                                 </p>
                               </div>
                               <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 transition-opacity">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-5 w-5"
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  className="h-5 w-5 flex items-center justify-center rounded hover:bg-muted cursor-pointer"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setEditingSession(session.id);
                                     setEditName(session.title);
                                   }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.stopPropagation();
+                                      setEditingSession(session.id);
+                                      setEditName(session.title);
+                                    }
+                                  }}
                                 >
                                   <Pencil className="w-2.5 h-2.5" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-5 w-5 text-destructive hover:text-destructive"
+                                </div>
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  className="h-5 w-5 flex items-center justify-center rounded hover:bg-destructive/20 cursor-pointer text-destructive"
                                   onClick={(e) => handleDeleteSession(session.id, e)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      handleDeleteSession(session.id, e as any);
+                                    }
+                                  }}
                                 >
                                   <Trash2 className="w-2.5 h-2.5" />
-                                </Button>
+                                </div>
                               </div>
                             </div>
                           </button>
