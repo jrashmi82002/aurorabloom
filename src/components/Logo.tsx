@@ -1,20 +1,44 @@
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface LogoProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   showText?: boolean;
+  clickable?: boolean;
 }
 
-export const Logo = ({ className, size = "md", showText = true }: LogoProps) => {
+export const Logo = ({ className, size = "md", showText = true, clickable = true }: LogoProps) => {
+  const navigate = useNavigate();
+  
   const sizes = {
     sm: "w-6 h-6",
     md: "w-8 h-8",
     lg: "w-12 h-12",
   };
 
+  const handleClick = () => {
+    if (clickable) {
+      navigate("/");
+    }
+  };
+
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div 
+      className={cn(
+        "flex items-center gap-2", 
+        clickable && "cursor-pointer hover:opacity-80 transition-opacity",
+        className
+      )}
+      onClick={handleClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (clickable && (e.key === "Enter" || e.key === " ")) {
+          handleClick();
+        }
+      }}
+    >
       <svg
         viewBox="0 0 100 100"
         className={cn(sizes[size], "text-primary")}

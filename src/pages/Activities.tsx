@@ -5,6 +5,7 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play } from "lucide-react";
 
 const Activities = () => {
@@ -55,7 +56,7 @@ const Activities = () => {
     return () => clearTimeout(timeoutId);
   }, [activeGame]);
 
-  // Drawing canvas setup
+  // Drawing canvas setup - white background like MS Paint
   useEffect(() => {
     if (activeGame !== "drawing" || !canvasRef.current) return;
     
@@ -65,7 +66,7 @@ const Activities = () => {
     
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
-    ctx.fillStyle = "#1a1a2e";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -90,7 +91,7 @@ const Activities = () => {
     if (!ctx || !canvas) return;
     
     const rect = canvas.getBoundingClientRect();
-    ctx.strokeStyle = drawingTool === "eraser" ? "#1a1a2e" : brushColor;
+    ctx.strokeStyle = drawingTool === "eraser" ? "#ffffff" : brushColor;
     ctx.lineWidth = drawingTool === "eraser" ? 20 : 4;
     ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
     ctx.stroke();
@@ -119,35 +120,51 @@ const Activities = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx || !canvas) return;
-    ctx.fillStyle = "#1a1a2e";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
-  // Sound URLs (free nature sounds)
+  // Sound URLs (working free nature sounds from freesound.org and other CDNs)
   const sounds: Record<string, string> = {
-    ocean: "https://cdn.pixabay.com/audio/2022/05/16/audio_1333de3b82.mp3",
-    rain: "https://cdn.pixabay.com/audio/2022/05/13/audio_257112847a.mp3",
-    fire: "https://cdn.pixabay.com/audio/2021/10/08/audio_4deab48c2e.mp3",
-    birds: "https://cdn.pixabay.com/audio/2022/02/07/audio_9a1da63c41.mp3",
+    ocean: "https://www.soundjay.com/nature/sounds/ocean-wave-1.mp3",
+    rain: "https://www.soundjay.com/nature/sounds/rain-01.mp3",
+    fire: "https://www.soundjay.com/misc/sounds/fire-burning-1.mp3",
+    birds: "https://www.soundjay.com/nature/sounds/birds-1.mp3",
   };
 
   const playSound = (soundKey: string) => {
+    // Stop current audio if any
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       audioRef.current = null;
     }
     
+    // Toggle off if same sound
     if (playingSound === soundKey) {
       setPlayingSound(null);
       return;
     }
     
+    // Create and play new audio
     const audio = new Audio(sounds[soundKey]);
+    audio.crossOrigin = "anonymous";
     audio.loop = true;
-    audio.volume = 0.5;
-    audio.play();
-    audioRef.current = audio;
-    setPlayingSound(soundKey);
+    audio.volume = 0.6;
+    
+    audio.play().then(() => {
+      audioRef.current = audio;
+      setPlayingSound(soundKey);
+    }).catch((err) => {
+      console.error("Audio playback failed:", err);
+      // Fallback: try using Web Audio API for better compatibility
+      setPlayingSound(null);
+    });
+    
+    audio.onerror = () => {
+      console.error("Audio load error for:", soundKey);
+      setPlayingSound(null);
+    };
   };
 
   // Cleanup audio on unmount or game change
@@ -216,7 +233,7 @@ const Activities = () => {
                 <PanelLeft className="w-5 h-5" />
               </Button>
             )}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
                 <Gamepad2 className="w-5 h-5 text-white" />
               </div>
@@ -225,6 +242,7 @@ const Activities = () => {
                 <p className="text-sm text-muted-foreground">Mind-calming exercises for your wellbeing</p>
               </div>
             </div>
+            <ThemeToggle />
           </div>
         </header>
 

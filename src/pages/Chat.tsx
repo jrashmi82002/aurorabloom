@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, Volume2, VolumeX, Square, Home, Play, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Send, Volume2, VolumeX, Square, Play, PanelLeftClose, PanelLeft, Pause } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
 import { Logo } from "@/components/Logo";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Message {
   role: "user" | "assistant";
@@ -22,13 +23,11 @@ const therapyTitles: Record<string, string> = {
   physiotherapy: "Physiotherapy",
   ayurveda: "Ayurveda Solutions",
   talk_therapy: "Talk Therapy",
-  genz_therapy: "GenZ Therapy",
   female_therapy: "Female Therapy",
   male_therapy: "Male Therapy",
   older_therapy: "Senior Therapy",
   children_therapy: "Children's Therapy",
-  millennial_therapy: "Millennial Therapy",
-  advanced_therapy: "Advanced Therapy",
+  advanced_therapy: "Custom Therapy",
 };
 
 // Therapist names per therapy type and gender
@@ -51,8 +50,8 @@ const Chat = () => {
   const [searchParams] = useSearchParams();
   const therapyType = (searchParams.get("type") || "talk_therapy") as 
     "yogic" | "psychological" | "physiotherapy" | "ayurveda" | "talk_therapy" | 
-    "genz_therapy" | "female_therapy" | "male_therapy" | "older_therapy" | 
-    "children_therapy" | "millennial_therapy" | "advanced_therapy";
+    "female_therapy" | "male_therapy" | "older_therapy" | 
+    "children_therapy" | "advanced_therapy";
   const existingSessionId = searchParams.get("session");
   
   const [user, setUser] = useState<User | null>(null);
@@ -65,8 +64,10 @@ const Chat = () => {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -251,13 +252,32 @@ const Chat = () => {
     }
   };
 
+  // Clean text for speech - remove emojis and symbols
+  const cleanTextForSpeech = (text: string): string => {
+    return text
+      .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
+      .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Misc symbols
+      .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Transport
+      .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // Flags
+      .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
+      .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
+      .replace(/[*_~`#]/g, '')                // Markdown symbols
+      .trim();
+  };
+
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
+    
+    // Stop any current speech first
     speechSynthesis.cancel();
     setIsSpeaking(true);
+    setIsPaused(false);
+    
     try {
-      const utterance = new SpeechSynthesisUtterance(text);
+      const cleanedText = cleanTextForSpeech(text);
+      const utterance = new SpeechSynthesisUtterance(cleanedText);
       utterance.rate = 0.95;
+      currentUtteranceRef.current = utterance;
       
       const voices = speechSynthesis.getVoices();
       let preferredVoice;
@@ -292,22 +312,52 @@ const Chat = () => {
       }
       
       if (preferredVoice) utterance.voice = preferredVoice;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setIsPaused(false);
+        currentUtteranceRef.current = null;
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        setIsPaused(false);
+        currentUtteranceRef.current = null;
+      };
       speechSynthesis.speak(utterance);
     } catch (error) {
       console.error("Speech error:", error);
       setIsSpeaking(false);
+      setIsPaused(false);
+    }
+  };
+
+  const pauseSpeaking = () => {
+    if (speechSynthesis.speaking && !speechSynthesis.paused) {
+      speechSynthesis.pause();
+      setIsPaused(true);
+    }
+  };
+
+  const resumeSpeaking = () => {
+    if (speechSynthesis.paused) {
+      speechSynthesis.resume();
+      setIsPaused(false);
     }
   };
 
   const stopSpeaking = () => {
     speechSynthesis.cancel();
     setIsSpeaking(false);
+    setIsPaused(false);
+    currentUtteranceRef.current = null;
   };
 
   const sendMessage = async () => {
     if (!input.trim() || !sessionId) return;
+
+    // Stop any ongoing speech when sending a new message
+    if (isSpeaking) {
+      stopSpeaking();
+    }
 
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -404,14 +454,6 @@ const Chat = () => {
                 <PanelLeft className="w-5 h-5" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              className="shrink-0"
-            >
-              <Home className="w-5 h-5" />
-            </Button>
             <Logo size="sm" showText={false} />
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-serif font-semibold truncate">
@@ -442,6 +484,7 @@ const Chat = () => {
                   <VolumeX className="w-4 h-4" />
                 )}
               </Button>
+              <ThemeToggle />
             </div>
           </div>
         </header>
@@ -468,15 +511,38 @@ const Chat = () => {
                     {message.role === "assistant" && voiceEnabled && (
                       <div className="flex gap-2 mt-2">
                         {isSpeaking ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs opacity-60 hover:opacity-100"
-                            onClick={stopSpeaking}
-                          >
-                            <Square className="w-3 h-3 mr-1" />
-                            Stop
-                          </Button>
+                          <>
+                            {isPaused ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs opacity-60 hover:opacity-100"
+                                onClick={resumeSpeaking}
+                              >
+                                <Play className="w-3 h-3 mr-1" />
+                                Resume
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs opacity-60 hover:opacity-100"
+                                onClick={pauseSpeaking}
+                              >
+                                <Pause className="w-3 h-3 mr-1" />
+                                Pause
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs opacity-60 hover:opacity-100"
+                              onClick={stopSpeaking}
+                            >
+                              <Square className="w-3 h-3 mr-1" />
+                              Stop
+                            </Button>
+                          </>
                         ) : (
                           <Button
                             variant="ghost"

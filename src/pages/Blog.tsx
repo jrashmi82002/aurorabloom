@@ -5,6 +5,7 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { PanelLeft, Newspaper, Clock, ArrowRight } from "lucide-react";
 
 interface BlogPost {
@@ -313,7 +314,7 @@ const Blog = () => {
                 <PanelLeft className="w-5 h-5" />
               </Button>
             )}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                 <Newspaper className="w-5 h-5 text-white" />
               </div>
@@ -327,6 +328,7 @@ const Blog = () => {
                 ← Back to Posts
               </Button>
             )}
+            <ThemeToggle />
           </div>
         </header>
 

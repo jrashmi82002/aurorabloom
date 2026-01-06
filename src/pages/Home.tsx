@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, Zap, PanelLeft } from "lucide-react";
+import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, Zap, PanelLeft, HelpCircle } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { ProAccessRequest } from "@/components/ProAccessRequest";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
 
 const therapyTypes = [
   { id: "yogic", title: "Yogic Therapy", description: "Ancient wisdom through breathing, meditation, and mindful movement", icon: FlowerIcon, color: "from-purple-400 to-purple-600" },
@@ -14,12 +16,11 @@ const therapyTypes = [
   { id: "physiotherapy", title: "Physiotherapy", description: "Physical rehabilitation and movement therapy", icon: Activity, color: "from-green-400 to-green-600" },
   { id: "ayurveda", title: "Ayurveda Solutions", description: "Holistic wellness through natural remedies", icon: Leaf, color: "from-emerald-400 to-emerald-600" },
   { id: "talk_therapy", title: "Talk Therapy", description: "Compassionate conversation with a caring therapist", icon: MessageCircle, color: "from-pink-400 to-pink-600" },
-  { id: "genz_therapy", title: "GenZ Therapy", description: "For the digital native dealing with modern pressures", icon: Zap, color: "from-cyan-400 to-cyan-600" },
   { id: "female_therapy", title: "Female Therapy", description: "Support tailored to women's unique experiences", icon: Users, color: "from-rose-400 to-rose-600" },
   { id: "male_therapy", title: "Male Therapy", description: "A safe space for men to open up and heal", icon: Users, color: "from-slate-400 to-slate-600" },
   { id: "older_therapy", title: "Senior Therapy", description: "Wisdom-informed support for life's later chapters", icon: Brain, color: "from-amber-400 to-amber-600" },
   { id: "children_therapy", title: "Children's Therapy", description: "Gentle, age-appropriate emotional support", icon: Baby, color: "from-orange-400 to-orange-600" },
-  { id: "millennial_therapy", title: "Millennial Therapy", description: "Navigating adulting, careers, and life balance", icon: Sparkles, color: "from-indigo-400 to-indigo-600" },
+  { id: "advanced_therapy", title: "Custom Therapy", description: "Tell us your specific needs and get personalized support", icon: HelpCircle, color: "from-cyan-400 to-teal-600" },
 ];
 
 const Home = () => {
@@ -57,10 +58,12 @@ const Home = () => {
                 <PanelLeft className="w-5 h-5" />
               </Button>
             )}
-            <div>
+            <Logo size="sm" clickable={false} />
+            <div className="flex-1">
               <h1 className="text-2xl font-serif font-bold">Choose Your Path</h1>
               <p className="text-sm text-muted-foreground">Select a therapy type to begin or continue</p>
             </div>
+            <ThemeToggle />
           </div>
         </header>
 
