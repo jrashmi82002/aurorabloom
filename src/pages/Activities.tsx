@@ -144,22 +144,22 @@ const Activities = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
-  // Sound URLs - using reliable public audio sources
+  // Sound URLs - using reliable Freesound.org CDN (CC0 licensed)
   const sounds: Record<string, { url: string; label: string }> = {
     ocean: { 
-      url: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Waves.ogg",
+      url: "https://cdn.freesound.org/previews/527/527693_2193266-lq.mp3",
       label: "🌊 Ocean Waves"
     },
     rain: { 
-      url: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Rain_moderate_on_window.ogg",
+      url: "https://cdn.freesound.org/previews/531/531947_6456006-lq.mp3",
       label: "🌲 Forest Rain"
     },
     fire: { 
-      url: "https://upload.wikimedia.org/wikipedia/commons/0/0a/Fireplace.ogg",
+      url: "https://cdn.freesound.org/previews/499/499503_10782540-lq.mp3",
       label: "🔥 Crackling Fire"
     },
     birds: { 
-      url: "https://upload.wikimedia.org/wikipedia/commons/4/45/A_curious_bird.ogg",
+      url: "https://cdn.freesound.org/previews/438/438926_4284968-lq.mp3",
       label: "🦜 Bird Songs"
     },
   };
