@@ -8,7 +8,7 @@ import { User } from "@supabase/supabase-js";
 import { ProAccessRequest } from "@/components/ProAccessRequest";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Logo } from "@/components/Logo";
+
 
 const therapyTypes = [
   { id: "yogic", title: "Yogic Therapy", description: "Ancient wisdom through breathing, meditation, and mindful movement", icon: FlowerIcon, color: "from-purple-400 to-purple-600" },
@@ -58,7 +58,6 @@ const Home = () => {
                 <PanelLeft className="w-5 h-5" />
               </Button>
             )}
-            <Logo size="sm" clickable={false} />
             <div className="flex-1">
               <h1 className="text-2xl font-serif font-bold">Choose Your Path</h1>
               <p className="text-sm text-muted-foreground">Select a therapy type to begin or continue</p>
