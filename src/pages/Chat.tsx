@@ -30,12 +30,27 @@ const therapyTitles: Record<string, string> = {
   advanced_therapy: "Custom Therapy",
 };
 
-// Therapist names per therapy type and gender
-const getTherapistName = (therapyType: string, gender: "male" | "female") => {
-  if (therapyType === "yogic") {
-    return gender === "female" ? "Jaya" : "Vishesh";
-  }
-  return gender === "female" ? "Maya" : "Marcus";
+// Voice options - 8 distinct voices (4 male, 4 female)
+const voiceOptions = {
+  female: [
+    { id: "maya", name: "Maya", description: "Calm, soothing" },
+    { id: "jaya", name: "Jaya", description: "Indian, warm" },
+    { id: "sarah", name: "Sarah", description: "Gentle, maternal" },
+    { id: "elena", name: "Elena", description: "Soft, peaceful" },
+  ],
+  male: [
+    { id: "marcus", name: "Marcus", description: "American, steady" },
+    { id: "vishesh", name: "Vishesh", description: "Indian, wise" },
+    { id: "david", name: "David", description: "British, composed" },
+    { id: "elder", name: "Elder James", description: "Elderly, wise" },
+  ],
+};
+
+// Therapist names per therapy type and voice selection
+const getTherapistName = (therapyType: string, voiceId: string) => {
+  const allVoices = [...voiceOptions.female, ...voiceOptions.male];
+  const voice = allVoices.find(v => v.id === voiceId);
+  return voice?.name || "Maya";
 };
 
 // Generate session title based on date/time
@@ -62,6 +77,7 @@ const Chat = () => {
   const [showQuiz, setShowQuiz] = useState(true);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [selectedVoice, setSelectedVoice] = useState("maya");
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -282,33 +298,53 @@ const Chat = () => {
       const voices = speechSynthesis.getVoices();
       let preferredVoice;
       
-      // Maya = female voice, Marcus = American male, Jaya = Indian female, Vishesh = Indian male
-      if (therapyType === "yogic") {
-        if (voiceGender === "female") {
-          // Jaya - Indian female voice
-          utterance.pitch = 1.15;
-          preferredVoice = voices.find(v => v.lang.includes("hi") || v.lang.includes("en-IN")) 
-            || voices.find(v => v.name.includes("Veena") || v.name.includes("Lekha"))
-            || voices.find(v => v.name.includes("Female") || v.name.includes("Samantha"));
-        } else {
-          // Vishesh - Indian male voice
-          utterance.pitch = 0.85;
-          preferredVoice = voices.find(v => v.lang.includes("hi") || v.lang.includes("en-IN"))
-            || voices.find(v => v.name.includes("Ravi"))
-            || voices.find(v => v.name.includes("Male") || v.name.includes("Daniel"));
-        }
-      } else {
-        if (voiceGender === "female") {
-          // Maya - Female voice
+      // Voice configuration based on selected voice
+      switch (selectedVoice) {
+        case "maya":
           utterance.pitch = 1.1;
-          preferredVoice = voices.find(v => v.name.includes("Samantha") || v.name.includes("Karen") || v.name.includes("Victoria"))
-            || voices.find(v => v.name.toLowerCase().includes("female"));
-        } else {
-          // Marcus - American male voice
+          preferredVoice = voices.find(v => v.name.includes("Samantha") || v.name.includes("Karen"));
+          break;
+        case "jaya":
+          utterance.pitch = 1.15;
+          preferredVoice = voices.find(v => v.lang.includes("en-IN") || v.name.includes("Veena"));
+          break;
+        case "sarah":
+          utterance.pitch = 1.0;
+          utterance.rate = 0.9;
+          preferredVoice = voices.find(v => v.name.includes("Victoria") || v.name.includes("Kate"));
+          break;
+        case "elena":
+          utterance.pitch = 1.2;
+          utterance.rate = 0.85;
+          preferredVoice = voices.find(v => v.name.includes("Fiona") || v.name.includes("Moira"));
+          break;
+        case "marcus":
           utterance.pitch = 0.9;
-          preferredVoice = voices.find(v => v.name.includes("Alex") || v.name.includes("Tom") || v.name.includes("Daniel"))
-            || voices.find(v => v.lang === "en-US" && v.name.toLowerCase().includes("male"));
-        }
+          preferredVoice = voices.find(v => v.name.includes("Alex") || v.name.includes("Tom"));
+          break;
+        case "vishesh":
+          utterance.pitch = 0.85;
+          preferredVoice = voices.find(v => v.lang.includes("en-IN") || v.name.includes("Ravi"));
+          break;
+        case "david":
+          utterance.pitch = 0.95;
+          preferredVoice = voices.find(v => v.name.includes("Daniel") || v.lang === "en-GB");
+          break;
+        case "elder":
+          utterance.pitch = 0.75;
+          utterance.rate = 0.85;
+          preferredVoice = voices.find(v => v.name.includes("Fred") || v.name.includes("Ralph"));
+          break;
+        default:
+          preferredVoice = voices.find(v => v.name.includes("Samantha"));
+      }
+      
+      // Fallback to any available voice matching gender
+      if (!preferredVoice) {
+        const isFemale = ["maya", "jaya", "sarah", "elena"].includes(selectedVoice);
+        preferredVoice = voices.find(v => 
+          isFemale ? v.name.toLowerCase().includes("female") : v.name.toLowerCase().includes("male")
+        ) || voices[0];
       }
       
       if (preferredVoice) utterance.voice = preferredVoice;
@@ -425,7 +461,8 @@ const Chat = () => {
     speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
   }, []);
 
-  const therapistName = getTherapistName(therapyType, voiceGender);
+  const therapistName = getTherapistName(therapyType, selectedVoice);
+  const currentVoiceOptions = voiceGender === "female" ? voiceOptions.female : voiceOptions.male;
 
   if (!user) return null;
 
@@ -464,14 +501,26 @@ const Chat = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setVoiceGender(voiceGender === "female" ? "male" : "female")}
-                className="text-xs"
+              <select
+                value={selectedVoice}
+                onChange={(e) => {
+                  setSelectedVoice(e.target.value);
+                  const isFemale = voiceOptions.female.some(v => v.id === e.target.value);
+                  setVoiceGender(isFemale ? "female" : "male");
+                }}
+                className="text-xs bg-background border border-input rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                {voiceGender === "female" ? `♀ ${getTherapistName(therapyType, "female")}` : `♂ ${getTherapistName(therapyType, "male")}`}
-              </Button>
+                <optgroup label="Female Voices">
+                  {voiceOptions.female.map(v => (
+                    <option key={v.id} value={v.id}>{v.name} - {v.description}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Male Voices">
+                  {voiceOptions.male.map(v => (
+                    <option key={v.id} value={v.id}>{v.name} - {v.description}</option>
+                  ))}
+                </optgroup>
+              </select>
               <Button
                 variant="outline"
                 size="icon"

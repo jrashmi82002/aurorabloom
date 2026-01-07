@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Crown } from "lucide-react";
+import { Loader2, CheckCircle2, Crown, Bell } from "lucide-react";
 
 export const ProAccessRequest = () => {
   const [email, setEmail] = useState("");
@@ -15,11 +15,53 @@ export const ProAccessRequest = () => {
   const [hasRequested, setHasRequested] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showProGrantedNotification, setShowProGrantedNotification] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     checkProStatus();
-  }, []);
+    
+    // Subscribe to profile changes to detect pro access changes
+    const channel = supabase
+      .channel('pro-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+        },
+        async (payload) => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && payload.new && (payload.new as any).id === user.id) {
+            const newStatus = (payload.new as any).pro_subscription_status;
+            const oldStatus = (payload.old as any)?.pro_subscription_status;
+            
+            if (newStatus === 'active' && oldStatus !== 'active') {
+              setIsPro(true);
+              setHasRequested(false);
+              setShowProGrantedNotification(true);
+              toast({
+                title: "🎉 Pro Access Granted!",
+                description: "You now have access to all premium features.",
+              });
+            } else if (newStatus !== 'active' && oldStatus === 'active') {
+              setIsPro(false);
+              toast({
+                title: "Pro Access Revoked",
+                description: "Your pro access has been discontinued. You can request again.",
+                variant: "destructive",
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   const checkProStatus = async () => {
     try {
@@ -114,20 +156,31 @@ export const ProAccessRequest = () => {
     );
   }
 
-  // User is already Pro
+  // User is already Pro - show celebration
   if (isPro) {
     return (
       <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            {showProGrantedNotification && (
+              <div className="absolute top-2 right-2 animate-bounce">
+                <Bell className="w-5 h-5 text-amber-500" />
+              </div>
+            )}
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center animate-pulse">
               <Crown className="w-8 h-8 text-white" />
             </div>
             <div>
               <h3 className="text-xl font-semibold mb-2">You're a Pro Member! 🎉</h3>
               <p className="text-muted-foreground">
-                Enjoy unlimited messages, enhanced diary features, and all premium activities.
+                Enjoy unlimited messages, enhanced diary features, 4 extra therapy activities, and all premium features.
               </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2 text-xs">
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Unlimited Sessions</span>
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Extra Activities</span>
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Diary Images</span>
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">8 AI Voices</span>
             </div>
           </div>
         </CardContent>
@@ -144,7 +197,7 @@ export const ProAccessRequest = () => {
             <div>
               <h3 className="text-xl font-semibold mb-2">Request Submitted!</h3>
               <p className="text-muted-foreground">
-                We've received your pro access request. You'll hear from us soon via email.
+                We've received your pro access request. You'll receive a notification here and via email when approved.
               </p>
             </div>
           </div>
