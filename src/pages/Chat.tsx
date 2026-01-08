@@ -466,8 +466,8 @@ const Chat = () => {
                 onChange={(e) => setVoiceGender(e.target.value as "male" | "female")}
                 className="text-xs bg-background border border-input rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="female">Maya (Female)</option>
-                <option value="male">Marcus (Male)</option>
+                <option value="female">Maya</option>
+                <option value="male">Marcus</option>
               </select>
               <Button
                 variant="outline"

@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Crown, Timer, Brain, Flower2, Puzzle } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileIcon } from "@/components/ProfileIcon";
+import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen } from "lucide-react";
+import { useCalmingSounds } from "@/hooks/useCalmingSounds";
+import { GitaVerses } from "@/components/activities/GitaVerses";
+import { YogaPoses } from "@/components/activities/YogaPoses";
 
 const Activities = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -19,8 +24,9 @@ const Activities = () => {
   const [brushColor, setBrushColor] = useState("#4ade80");
   const [drawingTool, setDrawingTool] = useState<"brush" | "eraser" | "fill">("brush");
   const [breathePhase, setBreathePhase] = useState<"inhale" | "hold" | "exhale">("inhale");
-  const [playingSound, setPlayingSound] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Use the calming sounds hook
+  const { playSound, stopSound, playingSound, isLoading: soundLoading } = useCalmingSounds();
   
   // Pro activity states
   const [yogaTimer, setYogaTimer] = useState(30);
@@ -29,6 +35,10 @@ const Activities = () => {
   const [memoryCards, setMemoryCards] = useState<number[]>([]);
   const [flippedCards, setFlippedCards] = useState<number[]>([]);
   const [matchedCards, setMatchedCards] = useState<number[]>([]);
+  const [focusTime, setFocusTime] = useState(25 * 60);
+  const [focusRunning, setFocusRunning] = useState(false);
+  const [gratitudeEntries, setGratitudeEntries] = useState<string[]>([]);
+  const [gratitudeInput, setGratitudeInput] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -129,7 +139,6 @@ const Activities = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    // Simple flood fill at click position (fill a circular area)
     ctx.beginPath();
     ctx.arc(x, y, 50, 0, Math.PI * 2);
     ctx.fillStyle = brushColor;
@@ -144,75 +153,18 @@ const Activities = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
-  // Sound URLs - using reliable Freesound.org CDN (CC0 licensed)
-  const sounds: Record<string, { url: string; label: string }> = {
-    ocean: { 
-      url: "https://cdn.freesound.org/previews/527/527693_2193266-lq.mp3",
-      label: "🌊 Ocean Waves"
-    },
-    rain: { 
-      url: "https://cdn.freesound.org/previews/531/531947_6456006-lq.mp3",
-      label: "🌲 Forest Rain"
-    },
-    fire: { 
-      url: "https://cdn.freesound.org/previews/499/499503_10782540-lq.mp3",
-      label: "🔥 Crackling Fire"
-    },
-    birds: { 
-      url: "https://cdn.freesound.org/previews/438/438926_4284968-lq.mp3",
-      label: "🦜 Bird Songs"
-    },
-  };
+  // Sound labels
+  const sounds = [
+    { key: "ocean", label: "🌊 Ocean Waves" },
+    { key: "rain", label: "🌲 Forest Rain" },
+    { key: "fire", label: "🔥 Crackling Fire" },
+    { key: "birds", label: "🦜 Bird Songs" },
+  ];
 
-  const playSound = (soundKey: string) => {
-    // Stop current audio if any
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-    
-    // Toggle off if same sound
-    if (playingSound === soundKey) {
-      setPlayingSound(null);
-      return;
-    }
-    
-    // Create and play new audio
-    const soundData = sounds[soundKey];
-    if (!soundData) return;
-    
-    const audio = new Audio(soundData.url);
-    audio.loop = true;
-    audio.volume = 0.7;
-    
-    // Set up event handlers before playing
-    audio.oncanplaythrough = () => {
-      audio.play().then(() => {
-        audioRef.current = audio;
-        setPlayingSound(soundKey);
-      }).catch((err) => {
-        console.error("Audio playback failed:", err);
-        setPlayingSound(null);
-      });
-    };
-    
-    audio.onerror = (e) => {
-      console.error("Audio load error for:", soundKey, e);
-      setPlayingSound(null);
-    };
-    
-    // Load the audio
-    audio.load();
-  };
-
-  // Cleanup audio on unmount or game change
+  // Cleanup sounds on game change
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      stopSound();
     };
   }, [activeGame]);
 
@@ -224,28 +176,22 @@ const Activities = () => {
     { name: "Corpse Pose", duration: 60, description: "Lie flat on your back, relax completely" },
   ];
 
-  // Yoga timer logic
+  // Focus timer logic
   useEffect(() => {
-    if (activeGame !== "yoga" || !yogaRunning) return;
+    if (activeGame !== "focus" || !focusRunning) return;
     
     const interval = setInterval(() => {
-      setYogaTimer((prev) => {
+      setFocusTime((prev) => {
         if (prev <= 1) {
-          // Move to next pose
-          if (yogaPose < yogaPoses.length - 1) {
-            setYogaPose(p => p + 1);
-            return yogaPoses[(yogaPose + 1) % yogaPoses.length].duration;
-          } else {
-            setYogaRunning(false);
-            return 0;
-          }
+          setFocusRunning(false);
+          return 0;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activeGame, yogaRunning, yogaPose]);
+  }, [activeGame, focusRunning]);
 
   // Initialize memory game
   useEffect(() => {
@@ -304,7 +250,15 @@ const Activities = () => {
 
   const proActivities = [
     {
-      id: "yoga",
+      id: "gita",
+      title: "Gita Wisdom",
+      description: "Sacred verses with healing stories",
+      icon: BookOpen,
+      color: "from-orange-400 to-amber-500",
+      isPro: true,
+    },
+    {
+      id: "yogaPoses",
       title: "Yoga Asanas",
       description: "Guided yoga poses with timer",
       icon: Flower2,
@@ -350,6 +304,12 @@ const Activities = () => {
     "I am capable of wonderful things",
   ];
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   if (!user) return null;
 
   return (
@@ -373,7 +333,9 @@ const Activities = () => {
                 <p className="text-sm text-muted-foreground">Mind-calming exercises for your wellbeing</p>
               </div>
             </div>
+            <NotificationBell />
             <ThemeToggle />
+            <ProfileIcon />
           </div>
         </header>
 
@@ -417,8 +379,8 @@ const Activities = () => {
                     <div className="flex items-center gap-3">
                       <Crown className="w-6 h-6 text-amber-500" />
                       <div>
-                        <p className="font-medium">Unlock 4 More Activities with Pro!</p>
-                        <p className="text-sm text-muted-foreground">Yoga poses, memory games, focus timer & gratitude journal</p>
+                        <p className="font-medium">Unlock 5 More Activities with Pro!</p>
+                        <p className="text-sm text-muted-foreground">Gita wisdom, yoga poses, memory games, focus timer & gratitude journal</p>
                       </div>
                     </div>
                   </Card>
@@ -426,7 +388,7 @@ const Activities = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <Button variant="outline" onClick={() => setActiveGame(null)}>
+                <Button variant="outline" onClick={() => { setActiveGame(null); stopSound(); }}>
                   ← Back to Activities
                 </Button>
 
@@ -468,7 +430,6 @@ const Activities = () => {
                     <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
                       <CardTitle>Express Yourself</CardTitle>
                       <div className="flex gap-2 flex-wrap items-center">
-                        {/* Tool Buttons */}
                         <div className="flex gap-1 mr-2 border-r pr-2 border-border">
                           <Button
                             variant={drawingTool === "brush" ? "default" : "outline"}
@@ -476,7 +437,8 @@ const Activities = () => {
                             onClick={() => setDrawingTool("brush")}
                             className="gap-1"
                           >
-                            <Palette className="w-4 h-4" />
+                            <Palette className="w-3 h-3" />
+                            Brush
                           </Button>
                           <Button
                             variant={drawingTool === "eraser" ? "default" : "outline"}
@@ -484,7 +446,8 @@ const Activities = () => {
                             onClick={() => setDrawingTool("eraser")}
                             className="gap-1"
                           >
-                            <Eraser className="w-4 h-4" />
+                            <Eraser className="w-3 h-3" />
+                            Eraser
                           </Button>
                           <Button
                             variant={drawingTool === "fill" ? "default" : "outline"}
@@ -492,29 +455,26 @@ const Activities = () => {
                             onClick={() => setDrawingTool("fill")}
                             className="gap-1"
                           >
-                            <PaintBucket className="w-4 h-4" />
+                            <PaintBucket className="w-3 h-3" />
+                            Fill
                           </Button>
                         </div>
-                        {/* Color Picker */}
-                        {["#4ade80", "#60a5fa", "#f472b6", "#fbbf24", "#a78bfa", "#ffffff", "#ef4444", "#000000"].map((color) => (
+                        {["#4ade80", "#60a5fa", "#f472b6", "#fbbf24", "#a78bfa", "#000000"].map((color) => (
                           <button
                             key={color}
-                            className={`w-6 h-6 rounded-full border-2 transition-transform ${
-                              brushColor === color ? "scale-125 border-primary ring-2 ring-primary/50" : "border-muted"
-                            }`}
+                            className={`w-6 h-6 rounded-full border-2 ${brushColor === color ? "border-foreground" : "border-transparent"}`}
                             style={{ backgroundColor: color }}
                             onClick={() => setBrushColor(color)}
                           />
                         ))}
-                        <Button variant="outline" size="sm" onClick={clearCanvas}>
-                          Clear
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={clearCanvas}>Clear</Button>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <canvas
                         ref={canvasRef}
-                        className={`w-full h-[400px] rounded-lg ${drawingTool === "fill" ? "cursor-cell" : drawingTool === "eraser" ? "cursor-pointer" : "cursor-crosshair"}`}
+                        className="w-full h-[400px] rounded-lg cursor-crosshair border border-border"
+                        style={{ backgroundColor: "#ffffff" }}
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
@@ -526,16 +486,15 @@ const Activities = () => {
                 )}
 
                 {activeGame === "affirmations" && (
-                  <Card>
+                  <Card className="overflow-hidden">
                     <CardContent className="p-8">
-                      <div className="grid gap-4">
-                        {affirmations.map((affirmation, i) => (
+                      <div className="space-y-4">
+                        {affirmations.map((affirmation, index) => (
                           <div
-                            key={i}
-                            className="p-4 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200/50 text-center animate-fade-in"
-                            style={{ animationDelay: `${i * 100}ms` }}
+                            key={index}
+                            className="p-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 hover:shadow-calm transition-all"
                           >
-                            <p className="text-lg font-serif">{affirmation}</p>
+                            <p className="text-lg font-serif text-center">✨ {affirmation} ✨</p>
                           </div>
                         ))}
                       </div>
@@ -544,105 +503,36 @@ const Activities = () => {
                 )}
 
                 {activeGame === "sounds" && (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <div className={`w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-6 ${playingSound ? "animate-pulse" : ""}`}>
-                        <Music className="w-12 h-12 text-white" />
-                      </div>
-                      <h3 className="text-xl font-serif mb-2">Nature Sounds</h3>
-                      <p className="text-muted-foreground mb-6">
-                        {playingSound ? `Playing ${sounds[playingSound]?.label}... Click again to stop` : "Close your eyes and imagine yourself in a peaceful place..."}
-                      </p>
-                      <div className="flex justify-center gap-3 flex-wrap">
-                        {Object.entries(sounds).map(([key, data]) => (
-                          <Button 
-                            key={key} 
-                            variant={playingSound === key ? "default" : "outline"} 
-                            className="gap-2"
-                            onClick={() => playSound(key)}
+                  <Card className="overflow-hidden">
+                    <CardHeader>
+                      <CardTitle>Calming Nature Sounds</CardTitle>
+                      <CardDescription>Click to play ambient sounds generated in real-time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        {sounds.map((sound) => (
+                          <Button
+                            key={sound.key}
+                            variant={playingSound === sound.key ? "default" : "outline"}
+                            className={`h-24 text-lg flex flex-col gap-2 ${
+                              playingSound === sound.key ? "bg-gradient-calm" : ""
+                            }`}
+                            onClick={() => playSound(sound.key)}
+                            disabled={soundLoading}
                           >
-                            {playingSound === key ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                            {data.label}
+                            <span className="text-2xl">{sound.label.split(" ")[0]}</span>
+                            <span className="text-sm">{sound.label.split(" ").slice(1).join(" ")}</span>
+                            {playingSound === sound.key && (
+                              <span className="text-xs animate-pulse">♪ Playing...</span>
+                            )}
                           </Button>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* PRO ACTIVITIES */}
-                {activeGame === "yoga" && isPro && (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center mb-6">
-                        <Flower2 className="w-12 h-12 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-serif mb-2">{yogaPoses[yogaPose].name}</h3>
-                      <p className="text-muted-foreground mb-4">{yogaPoses[yogaPose].description}</p>
-                      <div className="text-5xl font-bold text-primary mb-6">{yogaTimer}s</div>
-                      <div className="flex justify-center gap-3">
-                        <Button
-                          onClick={() => {
-                            if (yogaRunning) {
-                              setYogaRunning(false);
-                            } else {
-                              setYogaTimer(yogaPoses[yogaPose].duration);
-                              setYogaRunning(true);
-                            }
-                          }}
-                          className="gap-2"
-                        >
-                          {yogaRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                          {yogaRunning ? "Pause" : "Start Session"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setYogaPose(0);
-                            setYogaTimer(yogaPoses[0].duration);
-                            setYogaRunning(false);
-                          }}
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                      <div className="mt-6 flex justify-center gap-2">
-                        {yogaPoses.map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-3 h-3 rounded-full ${i === yogaPose ? "bg-primary" : i < yogaPose ? "bg-primary/50" : "bg-muted"}`}
-                          />
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {activeGame === "memory" && isPro && (
-                  <Card>
-                    <CardContent className="p-8">
-                      <h3 className="text-xl font-serif mb-4 text-center">Memory Match</h3>
-                      <p className="text-muted-foreground mb-6 text-center">Find all matching pairs to complete the game</p>
-                      <div className="grid grid-cols-4 gap-3 max-w-sm mx-auto">
-                        {memoryCards.map((card, index) => (
-                          <button
-                            key={index}
-                            className={`aspect-square rounded-lg text-2xl font-bold transition-all duration-300 ${
-                              flippedCards.includes(index) || matchedCards.includes(index)
-                                ? "bg-primary text-white"
-                                : "bg-muted hover:bg-muted/80"
-                            }`}
-                            onClick={() => handleCardClick(index)}
-                          >
-                            {flippedCards.includes(index) || matchedCards.includes(index) ? ["🌸", "🌺", "🌻", "🌷", "🌹", "🌼"][card - 1] : "?"}
-                          </button>
-                        ))}
-                      </div>
-                      {matchedCards.length === 12 && (
-                        <div className="mt-6 text-center">
-                          <p className="text-xl font-semibold text-primary">🎉 Congratulations! You won!</p>
-                          <Button className="mt-4" onClick={() => setActiveGame("memory")}>
-                            Play Again
+                      {playingSound && (
+                        <div className="mt-4 flex justify-center">
+                          <Button variant="outline" onClick={stopSound} className="gap-2">
+                            <Square className="w-4 h-4" />
+                            Stop Sound
                           </Button>
                         </div>
                       )}
@@ -650,50 +540,142 @@ const Activities = () => {
                   </Card>
                 )}
 
-                {activeGame === "focus" && isPro && (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center mb-6">
-                        <Timer className="w-12 h-12 text-white" />
+                {activeGame === "gita" && <GitaVerses />}
+
+                {activeGame === "yogaPoses" && <YogaPoses />}
+
+                {activeGame === "memory" && (
+                  <Card className="overflow-hidden">
+                    <CardHeader>
+                      <CardTitle>Memory Match</CardTitle>
+                      <CardDescription>Find all matching pairs to win!</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-4 gap-3">
+                        {memoryCards.map((card, index) => {
+                          const isFlipped = flippedCards.includes(index) || matchedCards.includes(index);
+                          const isMatched = matchedCards.includes(index);
+                          return (
+                            <button
+                              key={index}
+                              onClick={() => handleCardClick(index)}
+                              className={`aspect-square rounded-lg text-2xl font-bold transition-all duration-300 ${
+                                isFlipped
+                                  ? isMatched
+                                    ? "bg-green-500/20 border-green-500"
+                                    : "bg-primary/20 border-primary"
+                                  : "bg-muted hover:bg-muted/80"
+                              } border-2`}
+                            >
+                              {isFlipped ? ["🌸", "🌿", "🦋", "🌙", "⭐", "🌈"][card - 1] : "?"}
+                            </button>
+                          );
+                        })}
                       </div>
-                      <h3 className="text-xl font-serif mb-2">Focus Timer</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Use the Pomodoro technique: 25 min focus, 5 min break
-                      </p>
-                      <div className="text-5xl font-bold text-primary mb-6">25:00</div>
-                      <div className="flex justify-center gap-3">
-                        <Button className="gap-2">
-                          <Play className="w-4 h-4" /> Start Focus
+                      {matchedCards.length === 12 && (
+                        <p className="text-center mt-4 text-lg font-semibold text-green-600">
+                          🎉 Congratulations! You found all pairs!
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {activeGame === "focus" && (
+                  <Card className="overflow-hidden">
+                    <CardHeader>
+                      <CardTitle>Focus Timer</CardTitle>
+                      <CardDescription>Pomodoro-style deep focus session</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center py-8">
+                      <div className="text-6xl font-mono font-bold mb-8">
+                        {formatTime(focusTime)}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="lg"
+                          onClick={() => setFocusRunning(!focusRunning)}
+                          className="gap-2"
+                        >
+                          {focusRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                          {focusRunning ? "Pause" : "Start"}
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={() => {
+                            setFocusRunning(false);
+                            setFocusTime(25 * 60);
+                          }}
+                        >
+                          Reset
+                        </Button>
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        {[5, 15, 25, 45].map((mins) => (
+                          <Button
+                            key={mins}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setFocusRunning(false);
+                              setFocusTime(mins * 60);
+                            }}
+                          >
+                            {mins}m
+                          </Button>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                {activeGame === "gratitude" && isPro && (
-                  <Card>
-                    <CardContent className="p-8">
-                      <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center mb-6">
-                        <Brain className="w-8 h-8 text-white" />
+                {activeGame === "gratitude" && (
+                  <Card className="overflow-hidden">
+                    <CardHeader>
+                      <CardTitle>Gratitude Journal</CardTitle>
+                      <CardDescription>Write down things you're grateful for today</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="I am grateful for..."
+                          value={gratitudeInput}
+                          onChange={(e) => setGratitudeInput(e.target.value)}
+                          className="flex-1 px-4 py-2 rounded-lg border border-input bg-background"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && gratitudeInput.trim()) {
+                              setGratitudeEntries([...gratitudeEntries, gratitudeInput]);
+                              setGratitudeInput("");
+                            }
+                          }}
+                        />
+                        <Button
+                          onClick={() => {
+                            if (gratitudeInput.trim()) {
+                              setGratitudeEntries([...gratitudeEntries, gratitudeInput]);
+                              setGratitudeInput("");
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
                       </div>
-                      <h3 className="text-xl font-serif mb-4 text-center">Gratitude Journal</h3>
-                      <p className="text-muted-foreground mb-6 text-center">
-                        Write 3 things you're grateful for today
-                      </p>
-                      <div className="space-y-3 max-w-md mx-auto">
-                        {[1, 2, 3].map((num) => (
-                          <div key={num} className="flex items-center gap-3">
-                            <span className="text-2xl">✨</span>
-                            <input
-                              type="text"
-                              placeholder={`Gratitude #${num}`}
-                              className="flex-1 px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                            />
+                      <div className="space-y-2">
+                        {gratitudeEntries.map((entry, i) => (
+                          <div
+                            key={i}
+                            className="p-3 rounded-lg bg-green-500/10 border border-green-500/20"
+                          >
+                            🙏 {entry}
                           </div>
                         ))}
-                      </div>
-                      <div className="mt-6 text-center">
-                        <Button className="bg-gradient-calm">Save Gratitudes</Button>
+                        {gratitudeEntries.length === 0 && (
+                          <p className="text-center text-muted-foreground py-8">
+                            Start by writing something you're grateful for...
+                          </p>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
