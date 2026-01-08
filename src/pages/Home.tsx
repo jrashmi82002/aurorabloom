@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, Zap, PanelLeft, HelpCircle } from "lucide-react";
+import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, PanelLeft, HelpCircle } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { ProAccessRequest } from "@/components/ProAccessRequest";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-
+import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileIcon } from "@/components/ProfileIcon";
 
 const therapyTypes = [
   { id: "yogic", title: "Yogic Therapy", description: "Ancient wisdom through breathing, meditation, and mindful movement", icon: FlowerIcon, color: "from-purple-400 to-purple-600" },
@@ -62,7 +63,9 @@ const Home = () => {
               <h1 className="text-2xl font-serif font-bold">Choose Your Path</h1>
               <p className="text-sm text-muted-foreground">Select a therapy type to begin or continue</p>
             </div>
+            <NotificationBell />
             <ThemeToggle />
+            <ProfileIcon />
           </div>
         </header>
 

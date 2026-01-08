@@ -9,14 +9,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { subject, message } = await req.json();
+    const { subject, message, targetUserIds } = await req.json();
 
     if (!subject || !message) {
       throw new Error("Subject and message are required");
@@ -27,14 +26,39 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get all pro access request emails (unique users who have interacted)
-    const { data: requests } = await supabase
-      .from("pro_access_requests")
-      .select("email")
-      .not("email", "is", null);
+    // Get user emails - either specific users or all users with profiles
+    let emails: string[] = [];
+    let userIds: string[] = [];
 
-    // Get unique emails
-    const emails = [...new Set(requests?.map((r) => r.email) || [])];
+    if (targetUserIds && targetUserIds.length > 0) {
+      // Specific users
+      const { data: users } = await supabase
+        .auth.admin.listUsers();
+      
+      if (users?.users) {
+        const targetUsers = users.users.filter(u => targetUserIds.includes(u.id));
+        emails = targetUsers.map(u => u.email).filter(Boolean) as string[];
+        userIds = targetUsers.map(u => u.id);
+      }
+    } else {
+      // All users with profiles
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id");
+      
+      if (profiles) {
+        userIds = profiles.map(p => p.id);
+        
+        // Get emails from auth
+        const { data: users } = await supabase.auth.admin.listUsers();
+        if (users?.users) {
+          emails = users.users
+            .filter(u => userIds.includes(u.id))
+            .map(u => u.email)
+            .filter(Boolean) as string[];
+        }
+      }
+    }
 
     if (emails.length === 0) {
       return new Response(
@@ -46,7 +70,7 @@ serve(async (req) => {
     const html = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #7c3aed; margin: 0;">Healing Haven</h1>
+          <h1 style="color: #22c55e; margin: 0;">🌿 Healing Haven</h1>
         </div>
         <div style="font-size: 16px; color: #374151; line-height: 1.8; white-space: pre-wrap;">
           ${message}
@@ -61,6 +85,20 @@ serve(async (req) => {
         </p>
       </div>
     `;
+
+    // Create notifications for all target users
+    const notificationPromises = userIds.map(userId =>
+      supabase.from("notifications").insert({
+        user_id: userId,
+        title: subject,
+        message: message,
+        type: "broadcast",
+        is_read: false,
+      })
+    );
+
+    await Promise.all(notificationPromises);
+    console.log(`Created ${userIds.length} notifications`);
 
     // Send emails in batches to avoid rate limits
     let sentCount = 0;
@@ -93,7 +131,7 @@ serve(async (req) => {
     console.log(`Broadcast sent to ${sentCount}/${emails.length} users`);
 
     return new Response(
-      JSON.stringify({ success: true, sentCount, totalUsers: emails.length }),
+      JSON.stringify({ success: true, sentCount, totalUsers: emails.length, notificationsCreated: userIds.length }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
