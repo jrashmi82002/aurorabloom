@@ -27,7 +27,8 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
         async (payload) => {
           const { data: { user } } = await supabase.auth.getUser();
           if (user && (payload.new as any).id === user.id) {
-            setIsPro((payload.new as any).pro_subscription_status === "active");
+            const status = (payload.new as any).pro_subscription_status;
+            setIsPro(status === "yearly" || status === "monthly");
           }
         }
       )
@@ -60,7 +61,8 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
         .eq("id", user.id)
         .single();
 
-      setIsPro(profile?.pro_subscription_status === "active");
+      const status = profile?.pro_subscription_status;
+      setIsPro(status === "yearly" || status === "monthly");
     } catch (error) {
       console.error("Error fetching profile:", error);
     }
