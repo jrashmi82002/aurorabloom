@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, BarChart3, Mail, Crown } from "lucide-react";
+import { ArrowLeft, Users, BarChart3, Mail, Crown, UserCheck } from "lucide-react";
 import { AdminProRequests } from "@/components/admin/AdminProRequests";
 import { AdminUserAnalytics } from "@/components/admin/AdminUserAnalytics";
 import { AdminSessionInsights } from "@/components/admin/AdminSessionInsights";
 import { AdminEmailBroadcast } from "@/components/admin/AdminEmailBroadcast";
+import { AdminTargetedEmail } from "@/components/admin/AdminTargetedEmail";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/Logo";
 
@@ -80,7 +81,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="requests" className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+          <TabsList className="grid grid-cols-5 w-full max-w-3xl">
             <TabsTrigger value="requests" className="gap-2">
               <Crown className="w-4 h-4" />
               Pro Requests
@@ -96,6 +97,10 @@ const Admin = () => {
             <TabsTrigger value="broadcast" className="gap-2">
               <Mail className="w-4 h-4" />
               Broadcast
+            </TabsTrigger>
+            <TabsTrigger value="targeted" className="gap-2">
+              <UserCheck className="w-4 h-4" />
+              Targeted
             </TabsTrigger>
           </TabsList>
 
@@ -113,6 +118,10 @@ const Admin = () => {
 
           <TabsContent value="broadcast">
             <AdminEmailBroadcast />
+          </TabsContent>
+
+          <TabsContent value="targeted">
+            <AdminTargetedEmail />
           </TabsContent>
         </Tabs>
       </main>
