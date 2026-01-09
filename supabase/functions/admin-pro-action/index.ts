@@ -60,15 +60,11 @@ serve(async (req) => {
 
       if (profileError) throw profileError;
 
-      // Update request status
+      // Delete the request after approval (it's now in pro users)
       if (requestId) {
         const { error: requestError } = await supabaseClient
           .from("pro_access_requests")
-          .update({ 
-            status: "approved",
-            processed_at: new Date().toISOString(),
-            processed_by: adminUser.id,
-          })
+          .delete()
           .eq("id", requestId);
 
         if (requestError) throw requestError;

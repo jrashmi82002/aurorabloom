@@ -126,12 +126,10 @@ export const AdminProRequests = () => {
   const handleReject = async (request: ProRequest) => {
     setProcessingId(request.id);
     try {
+      // Delete the rejected request so user can request again
       const { error } = await supabase
         .from("pro_access_requests")
-        .update({ 
-          status: "rejected",
-          processed_at: new Date().toISOString()
-        })
+        .delete()
         .eq("id", request.id);
 
       if (error) throw error;
@@ -190,11 +188,11 @@ export const AdminProRequests = () => {
           </TabsList>
 
           <TabsContent value="requests">
-            {requests.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No requests yet</p>
+            {requests.filter(r => r.status === "pending").length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No pending requests</p>
             ) : (
               <div className="space-y-4">
-                {requests.map((request) => (
+                {requests.filter(r => r.status === "pending").map((request) => (
                   <div
                     key={request.id}
                     className="flex items-center justify-between p-4 border rounded-lg"
