@@ -37,7 +37,9 @@ export const ProAccessRequest = () => {
             const newStatus = (payload.new as any).pro_subscription_status;
             const oldStatus = (payload.old as any)?.pro_subscription_status;
             
-            if (newStatus === 'active' && oldStatus !== 'active') {
+            // Pro granted: yearly or monthly status
+            if ((newStatus === 'yearly' || newStatus === 'monthly') && 
+                oldStatus !== 'yearly' && oldStatus !== 'monthly') {
               setIsPro(true);
               setHasRequested(false);
               setShowProGrantedNotification(true);
@@ -45,8 +47,11 @@ export const ProAccessRequest = () => {
                 title: "🎉 Pro Access Granted!",
                 description: "You now have access to all premium features.",
               });
-            } else if (newStatus !== 'active' && oldStatus === 'active') {
+            } 
+            // Pro revoked: back to free
+            else if (newStatus === 'free' && (oldStatus === 'yearly' || oldStatus === 'monthly')) {
               setIsPro(false);
+              setHasRequested(false);
               toast({
                 title: "Pro Access Revoked",
                 description: "Your pro access has been discontinued. You can request again.",
@@ -81,7 +86,7 @@ export const ProAccessRequest = () => {
         .eq("id", user.id)
         .single();
 
-      if (profile?.pro_subscription_status === "active") {
+      if (profile?.pro_subscription_status === "yearly" || profile?.pro_subscription_status === "monthly") {
         setIsPro(true);
       }
 
