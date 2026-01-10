@@ -372,7 +372,7 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
           <Newspaper className="w-4 h-4" />
           Healing Blog
         </Button>
-        <div className="pt-2 border-t border-border/30 mt-2">
+        <div className="pt-2 border-t border-border/30 mt-2 space-y-1">
           <Button
             variant="ghost"
             className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-destructive"
