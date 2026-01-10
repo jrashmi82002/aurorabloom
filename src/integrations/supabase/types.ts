@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      diary_entries: {
+        Row: {
+          content: string
+          created_at: string
+          entry_date: string
+          id: string
+          image_url: string | null
+          insight: string | null
+          mood_sticker: string | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          entry_date: string
+          id?: string
+          image_url?: string | null
+          insight?: string | null
+          mood_sticker?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entry_date?: string
+          id?: string
+          image_url?: string | null
+          insight?: string | null
+          mood_sticker?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -85,12 +124,15 @@ export type Database = {
           age_group: string | null
           created_at: string | null
           daily_message_count: number | null
+          daily_session_count: number | null
           full_name: string | null
           gender_identity: string | null
           id: string
           last_message_date: string | null
+          last_session_date: string | null
           pro_subscription_ends_at: string | null
           pro_subscription_status: string | null
+          session_cooldown_until: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           updated_at: string | null
@@ -99,12 +141,15 @@ export type Database = {
           age_group?: string | null
           created_at?: string | null
           daily_message_count?: number | null
+          daily_session_count?: number | null
           full_name?: string | null
           gender_identity?: string | null
           id: string
           last_message_date?: string | null
+          last_session_date?: string | null
           pro_subscription_ends_at?: string | null
           pro_subscription_status?: string | null
+          session_cooldown_until?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string | null
@@ -113,12 +158,15 @@ export type Database = {
           age_group?: string | null
           created_at?: string | null
           daily_message_count?: number | null
+          daily_session_count?: number | null
           full_name?: string | null
           gender_identity?: string | null
           id?: string
           last_message_date?: string | null
+          last_session_date?: string | null
           pro_subscription_ends_at?: string | null
           pro_subscription_status?: string | null
+          session_cooldown_until?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string | null
@@ -270,6 +318,7 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      can_user_start_session: { Args: { user_id_param: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
