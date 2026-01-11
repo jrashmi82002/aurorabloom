@@ -59,14 +59,28 @@ const Chat = () => {
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
+  const [voiceStyle, setVoiceStyle] = useState<string>("default");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isPro, setIsPro] = useState(false);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Pro voice options
+  const voiceOptions = isPro ? [
+    { value: "female", label: "Maya (Female)" },
+    { value: "female-calm", label: "Serena (Calm)" },
+    { value: "female-warm", label: "Aurora (Warm)" },
+    { value: "male", label: "Marcus (Male)" },
+    { value: "male-deep", label: "David (Deep)" },
+  ] : [
+    { value: "female", label: "Maya" },
+    { value: "male", label: "Marcus" },
+  ];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -75,6 +89,7 @@ const Chat = () => {
       } else {
         setUser(session.user);
         checkExistingProfile(session.user.id);
+        checkProStatus(session.user.id);
         
         // If there's an existing session ID in URL, load it
         if (existingSessionId) {
@@ -83,6 +98,16 @@ const Chat = () => {
       }
     });
   }, [navigate, existingSessionId]);
+
+  const checkProStatus = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("pro_subscription_status")
+      .eq("id", userId)
+      .single();
+    const status = profile?.pro_subscription_status;
+    setIsPro(status === "yearly" || status === "monthly");
+  };
 
   const checkExistingProfile = async (userId: string) => {
     const { data: profile } = await supabase
@@ -463,11 +488,16 @@ const Chat = () => {
             <div className="flex items-center gap-2 shrink-0">
               <select
                 value={voiceGender}
-                onChange={(e) => setVoiceGender(e.target.value as "male" | "female")}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setVoiceGender(val.startsWith("male") ? "male" : "female");
+                  setVoiceStyle(val);
+                }}
                 className="text-xs bg-background border border-input rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="female">Maya</option>
-                <option value="male">Marcus</option>
+                {voiceOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
               <Button
                 variant="outline"
