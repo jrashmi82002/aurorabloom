@@ -16,7 +16,7 @@ import { YogaPoses } from "@/components/activities/YogaPoses";
 const Activities = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isPro, setIsPro] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -58,7 +58,8 @@ const Activities = () => {
       .eq("id", userId)
       .single();
     
-    setIsPro(profile?.pro_subscription_status === "active");
+    const status = profile?.pro_subscription_status;
+    setIsPro(status === "yearly" || status === "monthly");
   };
 
   // Breathing exercise logic
@@ -318,32 +319,32 @@ const Activities = () => {
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
-          <div className="px-6 py-4 flex items-center gap-4">
-            {!sidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-                <PanelLeft className="w-5 h-5" />
-              </Button>
-            )}
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
+          <div className="px-4 md:px-6 py-4 flex items-center gap-3 md:gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+              <PanelLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shrink-0">
                 <Gamepad2 className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-2xl font-serif font-bold">Therapy Activities</h1>
-                <p className="text-sm text-muted-foreground">Mind-calming exercises for your wellbeing</p>
+              <div className="min-w-0">
+                <h1 className="text-xl md:text-2xl font-serif font-bold truncate">Therapy Activities</h1>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Mind-calming exercises for your wellbeing</p>
               </div>
             </div>
-            <NotificationBell />
-            <ThemeToggle />
-            <ProfileIcon />
+            <div className="flex items-center gap-2 shrink-0">
+              <NotificationBell />
+              <ThemeToggle />
+              <ProfileIcon />
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-4xl mx-auto">
             {!activeGame ? (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {allActivities.map((activity) => {
                     const Icon = activity.icon;
                     const isProActivity = 'isPro' in activity && activity.isPro;
@@ -376,11 +377,17 @@ const Activities = () => {
                 </div>
                 {!isPro && (
                   <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 p-4">
-                    <div className="flex items-center gap-3">
-                      <Crown className="w-6 h-6 text-amber-500" />
+                    <div className="flex items-start gap-3">
+                      <Crown className="w-6 h-6 text-amber-500 shrink-0" />
                       <div>
                         <p className="font-medium">Unlock 5 More Activities with Pro!</p>
-                        <p className="text-sm text-muted-foreground">Gita wisdom, yoga poses, memory games, focus timer & gratitude journal</p>
+                        <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
+                          <li>📖 <strong>Gita Wisdom</strong> - Sacred verses with healing stories</li>
+                          <li>🧘 <strong>Yoga Asanas</strong> - Guided poses with timer & benefits</li>
+                          <li>🧩 <strong>Memory Match</strong> - Relaxing memory card game</li>
+                          <li>⏱️ <strong>Focus Timer</strong> - Pomodoro-style focus sessions</li>
+                          <li>🙏 <strong>Gratitude Journal</strong> - Daily gratitude reflection</li>
+                        </ul>
                       </div>
                     </div>
                   </Card>

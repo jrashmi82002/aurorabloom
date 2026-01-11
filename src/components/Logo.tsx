@@ -46,7 +46,7 @@ export const Logo = ({ className, size = "md", showText = true, clickable = true
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <linearGradient id="birdGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+          <linearGradient id="headGradient" x1="0%" y1="100%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(142, 76%, 36%)" />
             <stop offset="50%" stopColor="hsl(142, 70%, 45%)" />
             <stop offset="100%" stopColor="hsl(160, 60%, 50%)" />
@@ -67,85 +67,90 @@ export const Logo = ({ className, size = "md", showText = true, clickable = true
             <stop offset="0%" stopColor="hsl(142, 60%, 50%)" />
             <stop offset="100%" stopColor="hsl(142, 70%, 35%)" />
           </linearGradient>
+          <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(30, 60%, 75%)" />
+            <stop offset="100%" stopColor="hsl(25, 50%, 65%)" />
+          </linearGradient>
         </defs>
         
-        {/* Bird body - stylized phoenix/dove with open wings */}
-        <ellipse cx="50" cy="55" rx="12" ry="15" fill="url(#birdGradient)" />
+        {/* Human head silhouette - stylized profile */}
+        <ellipse cx="50" cy="55" rx="25" ry="30" fill="url(#headGradient)" />
         
-        {/* Bird head */}
-        <circle cx="50" cy="38" r="10" fill="url(#birdGradient)" />
+        {/* Face area - lighter inner glow */}
+        <ellipse cx="50" cy="58" rx="18" ry="22" fill="url(#headGradient)" opacity="0.8" />
         
-        {/* Bird beak */}
-        <path d="M60 38 L68 40 L60 42 Z" fill="hsl(35, 85%, 55%)" />
-        
-        {/* Bird eye */}
-        <circle cx="53" cy="36" r="2" fill="white" />
-        <circle cx="54" cy="36" r="1" fill="hsl(142, 70%, 25%)" />
-        
-        {/* Left wing - spread open */}
+        {/* Peaceful closed eyes */}
         <path
-          d="M38 50 
-             Q20 35 8 25
-             Q15 30 20 35
-             Q12 30 5 35
-             Q15 38 22 42
-             Q10 42 8 50
-             Q20 48 30 52
-             L38 55 Z"
-          fill="url(#birdGradient)"
-          opacity="0.95"
+          d="M38 52 Q42 50 46 52"
+          stroke="hsl(142, 60%, 25%)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M54 52 Q58 50 62 52"
+          stroke="hsl(142, 60%, 25%)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
         />
         
-        {/* Right wing - spread open */}
+        {/* Gentle smile */}
         <path
-          d="M62 50 
-             Q80 35 92 25
-             Q85 30 80 35
-             Q88 30 95 35
-             Q85 38 78 42
-             Q90 42 92 50
-             Q80 48 70 52
-             L62 55 Z"
-          fill="url(#birdGradient)"
-          opacity="0.95"
+          d="M44 64 Q50 68 56 64"
+          stroke="hsl(142, 60%, 25%)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
         />
         
-        {/* Bird tail */}
+        {/* Hair/crown area with flowers */}
         <path
-          d="M45 68 Q40 78 35 85 Q50 75 55 68 M55 68 Q60 78 65 85 Q50 75 45 68"
-          fill="url(#birdGradient)"
+          d="M25 45 Q30 25 50 22 Q70 25 75 45 Q65 35 50 32 Q35 35 25 45"
+          fill="url(#headGradient)"
           opacity="0.9"
         />
         
-        {/* Flowers on head - center flower (pink) */}
-        <g transform="translate(50, 28)">
-          <circle cx="0" cy="0" r="5" fill="url(#flowerGradient1)" />
-          <circle cx="-4" cy="-3" r="3" fill="url(#flowerGradient1)" opacity="0.8" />
-          <circle cx="4" cy="-3" r="3" fill="url(#flowerGradient1)" opacity="0.8" />
-          <circle cx="-4" cy="2" r="3" fill="url(#flowerGradient1)" opacity="0.8" />
-          <circle cx="4" cy="2" r="3" fill="url(#flowerGradient1)" opacity="0.8" />
-          <circle cx="0" cy="0" r="2" fill="hsl(45, 90%, 65%)" />
+        {/* Main center flower (large pink) */}
+        <g transform="translate(50, 18)">
+          <circle cx="0" cy="0" r="7" fill="url(#flowerGradient1)" />
+          <circle cx="-5" cy="-4" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
+          <circle cx="5" cy="-4" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
+          <circle cx="-6" cy="2" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
+          <circle cx="6" cy="2" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
+          <circle cx="0" cy="5" r="3" fill="url(#flowerGradient1)" opacity="0.8" />
+          <circle cx="0" cy="0" r="3" fill="hsl(45, 90%, 65%)" />
         </g>
         
         {/* Left flower (yellow) */}
-        <g transform="translate(38, 32)">
-          <circle cx="0" cy="0" r="4" fill="url(#flowerGradient2)" />
-          <circle cx="-3" cy="-2" r="2.5" fill="url(#flowerGradient2)" opacity="0.8" />
-          <circle cx="3" cy="-2" r="2.5" fill="url(#flowerGradient2)" opacity="0.8" />
-          <circle cx="0" cy="0" r="1.5" fill="hsl(25, 80%, 50%)" />
+        <g transform="translate(32, 26)">
+          <circle cx="0" cy="0" r="5" fill="url(#flowerGradient2)" />
+          <circle cx="-4" cy="-2" r="3" fill="url(#flowerGradient2)" opacity="0.9" />
+          <circle cx="4" cy="-2" r="3" fill="url(#flowerGradient2)" opacity="0.9" />
+          <circle cx="-3" cy="3" r="3" fill="url(#flowerGradient2)" opacity="0.8" />
+          <circle cx="3" cy="3" r="3" fill="url(#flowerGradient2)" opacity="0.8" />
+          <circle cx="0" cy="0" r="2" fill="hsl(25, 80%, 50%)" />
         </g>
         
         {/* Right flower (purple) */}
-        <g transform="translate(62, 32)">
-          <circle cx="0" cy="0" r="4" fill="url(#flowerGradient3)" />
-          <circle cx="-3" cy="-2" r="2.5" fill="url(#flowerGradient3)" opacity="0.8" />
-          <circle cx="3" cy="-2" r="2.5" fill="url(#flowerGradient3)" opacity="0.8" />
-          <circle cx="0" cy="0" r="1.5" fill="hsl(45, 85%, 65%)" />
+        <g transform="translate(68, 26)">
+          <circle cx="0" cy="0" r="5" fill="url(#flowerGradient3)" />
+          <circle cx="-4" cy="-2" r="3" fill="url(#flowerGradient3)" opacity="0.9" />
+          <circle cx="4" cy="-2" r="3" fill="url(#flowerGradient3)" opacity="0.9" />
+          <circle cx="-3" cy="3" r="3" fill="url(#flowerGradient3)" opacity="0.8" />
+          <circle cx="3" cy="3" r="3" fill="url(#flowerGradient3)" opacity="0.8" />
+          <circle cx="0" cy="0" r="2" fill="hsl(45, 85%, 65%)" />
         </g>
         
-        {/* Small leaves */}
-        <ellipse cx="44" cy="35" rx="3" ry="1.5" fill="url(#leafGradient)" transform="rotate(-30 44 35)" />
-        <ellipse cx="56" cy="35" rx="3" ry="1.5" fill="url(#leafGradient)" transform="rotate(30 56 35)" />
+        {/* Small decorative buds */}
+        <circle cx="40" cy="20" r="2.5" fill="url(#flowerGradient1)" opacity="0.7" />
+        <circle cx="60" cy="20" r="2.5" fill="url(#flowerGradient3)" opacity="0.7" />
+        
+        {/* Leaves */}
+        <ellipse cx="24" cy="35" rx="5" ry="2.5" fill="url(#leafGradient)" transform="rotate(-45 24 35)" />
+        <ellipse cx="76" cy="35" rx="5" ry="2.5" fill="url(#leafGradient)" transform="rotate(45 76 35)" />
+        <ellipse cx="42" cy="14" rx="4" ry="1.5" fill="url(#leafGradient)" transform="rotate(-30 42 14)" />
+        <ellipse cx="58" cy="14" rx="4" ry="1.5" fill="url(#leafGradient)" transform="rotate(30 58 14)" />
       </svg>
       {showText && (
         <span className={cn(
