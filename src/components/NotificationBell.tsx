@@ -11,6 +11,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Notification {
   id: string;
@@ -181,9 +188,32 @@ export const NotificationBell = () => {
                           <p className="text-sm font-medium truncate">
                             {notification.title}
                           </p>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className={`text-xs text-muted-foreground ${
+                            notification.message.length > 100 ? "line-clamp-2" : ""
+                          }`}>
                             {notification.message}
                           </p>
+                          {notification.message.length > 100 && (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <button className="text-xs text-primary hover:underline mt-1">
+                                  Read full message →
+                                </button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    {getNotificationIcon(notification.type)} {notification.title}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="py-4">
+                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                    {notification.message}
+                                  </p>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
                           <p className="text-xs text-muted-foreground mt-1">
                             {formatDistanceToNow(new Date(notification.created_at), {
                               addSuffix: true,

@@ -70,16 +70,16 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Pro voice options
+  // Pro voice options - persona names only, no gender labels
   const voiceOptions = isPro ? [
-    { value: "female", label: "Maya (Female)" },
-    { value: "female-calm", label: "Serena (Calm)" },
-    { value: "female-warm", label: "Aurora (Warm)" },
-    { value: "male", label: "Marcus (Male)" },
-    { value: "male-deep", label: "David (Deep)" },
+    { value: "female", label: "Maya", gender: "female" },
+    { value: "female-calm", label: "Serena", gender: "female" },
+    { value: "female-warm", label: "Aurora", gender: "female" },
+    { value: "male", label: "Marcus", gender: "male" },
+    { value: "male-deep", label: "David", gender: "male" },
   ] : [
-    { value: "female", label: "Maya" },
-    { value: "male", label: "Marcus" },
+    { value: "female", label: "Maya", gender: "female" },
+    { value: "male", label: "Marcus", gender: "male" },
   ];
 
   useEffect(() => {
@@ -303,34 +303,50 @@ const Chat = () => {
       const voices = speechSynthesis.getVoices();
       let preferredVoice;
       
-      // Voice configuration based on gender
+      // Voice configuration based on gender - with proper female voice selection
       if (voiceGender === "female") {
-        utterance.pitch = 1.15;
-        // Try to find actual female voices
+        // Set higher pitch for feminine sound
+        utterance.pitch = 1.2;
+        utterance.rate = 0.92;
+        
+        // Prioritize actual female voices - order matters
+        const femaleVoiceNames = [
+          "Samantha", "Karen", "Victoria", "Fiona", "Tessa", "Moira",
+          "Allison", "Susan", "Zira", "Siri", "Google UK English Female",
+          "Microsoft Zira", "Microsoft Eva", "Female", "woman"
+        ];
+        
         preferredVoice = voices.find(v => 
-          v.name.includes("Samantha") || 
-          v.name.includes("Karen") || 
-          v.name.includes("Victoria") ||
-          v.name.includes("Fiona") ||
-          v.name.includes("Tessa") ||
-          v.name.includes("Moira") ||
-          (v.name.toLowerCase().includes("female"))
+          femaleVoiceNames.some(name => v.name.toLowerCase().includes(name.toLowerCase()))
         );
+        
+        // Secondary: look for any voice with "female" or feminine names
+        if (!preferredVoice) {
+          preferredVoice = voices.find(v => 
+            v.name.toLowerCase().includes("female") ||
+            /\b(ella|emma|alice|sarah|kate|lisa|anna)\b/i.test(v.name)
+          );
+        }
       } else {
-        utterance.pitch = 0.9;
-        // Try to find actual male voices
+        // Male voice configuration
+        utterance.pitch = 0.85;
+        utterance.rate = 0.95;
+        
+        const maleVoiceNames = [
+          "Alex", "Daniel", "Tom", "Fred", "Thomas", "David",
+          "Google UK English Male", "Microsoft David", "Male"
+        ];
+        
         preferredVoice = voices.find(v => 
-          v.name.includes("Alex") || 
-          v.name.includes("Daniel") || 
-          v.name.includes("Tom") ||
-          v.name.includes("Fred") ||
-          v.name.includes("Thomas") ||
-          (v.name.toLowerCase().includes("male") && !v.name.toLowerCase().includes("female"))
+          maleVoiceNames.some(name => v.name.toLowerCase().includes(name.toLowerCase())) &&
+          !v.name.toLowerCase().includes("female")
         );
       }
       
-      // Fallback to any voice
-      if (!preferredVoice) {
+      // Fallback: prefer any voice that matches gender hint
+      if (!preferredVoice && voiceGender === "female") {
+        preferredVoice = voices.find(v => !v.name.toLowerCase().includes("male")) || voices[0];
+      } else if (!preferredVoice) {
         preferredVoice = voices[0];
       }
       
