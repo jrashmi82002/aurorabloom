@@ -12,6 +12,7 @@ interface YogaPose {
   benefits: string[];
   steps: string[];
   image: string; // emoji representation
+  finalPoseImage: string; // ASCII art or description of final pose
 }
 
 const yogaPoses: YogaPose[] = [
@@ -22,7 +23,8 @@ const yogaPoses: YogaPose[] = [
     description: "The foundation of all standing poses, teaching proper alignment and grounding.",
     benefits: ["Improves posture", "Strengthens thighs and ankles", "Calms the mind", "Creates body awareness"],
     steps: ["Stand with feet together", "Distribute weight evenly", "Engage thigh muscles", "Roll shoulders back", "Reach crown of head up", "Breathe deeply"],
-    image: "🧍"
+    image: "🧍",
+    finalPoseImage: "Stand tall like a mountain with arms at sides, weight balanced, crown reaching skyward"
   },
   {
     name: "Tree Pose",
@@ -31,7 +33,8 @@ const yogaPoses: YogaPose[] = [
     description: "A balancing pose that builds focus, concentration and stability.",
     benefits: ["Improves balance", "Strengthens legs", "Opens hips", "Builds focus", "Reduces stress"],
     steps: ["Start in Mountain Pose", "Shift weight to left foot", "Place right foot on inner thigh", "Press foot and thigh together", "Bring hands to heart", "Hold and breathe", "Switch sides"],
-    image: "🌳"
+    image: "🌳",
+    finalPoseImage: "Balance on one leg, other foot pressed against inner thigh, hands in prayer position at heart"
   },
   {
     name: "Warrior I",
@@ -40,7 +43,8 @@ const yogaPoses: YogaPose[] = [
     description: "A powerful standing pose that builds strength and confidence.",
     benefits: ["Strengthens legs", "Opens chest and shoulders", "Builds stamina", "Improves focus"],
     steps: ["Step right foot forward", "Bend right knee 90 degrees", "Back foot at 45 degrees", "Square hips forward", "Raise arms overhead", "Gaze up", "Hold and breathe"],
-    image: "⚔️"
+    image: "⚔️",
+    finalPoseImage: "Front knee bent at 90°, back leg straight, arms reaching powerfully overhead, gaze upward"
   },
   {
     name: "Child's Pose",
@@ -49,7 +53,8 @@ const yogaPoses: YogaPose[] = [
     description: "A restful pose that gently stretches the back and calms the nervous system.",
     benefits: ["Relieves back tension", "Calms anxiety", "Stretches hips", "Promotes relaxation"],
     steps: ["Kneel on the floor", "Touch big toes together", "Sit on heels", "Fold forward", "Extend arms forward or alongside body", "Rest forehead on mat", "Breathe deeply"],
-    image: "🧘"
+    image: "🧘",
+    finalPoseImage: "Kneeling with forehead on floor, arms extended forward, hips resting on heels, completely relaxed"
   },
   {
     name: "Cat-Cow Stretch",
@@ -58,7 +63,8 @@ const yogaPoses: YogaPose[] = [
     description: "A flowing movement that warms up the spine and releases tension.",
     benefits: ["Improves spine flexibility", "Massages organs", "Relieves stress", "Coordinates breath with movement"],
     steps: ["Start on hands and knees", "Inhale, arch back, look up (Cow)", "Exhale, round spine, tuck chin (Cat)", "Flow between poses", "Match movement to breath", "Continue for duration"],
-    image: "🐱🐄"
+    image: "🐱🐄",
+    finalPoseImage: "Flow between arched spine (Cow) and rounded spine (Cat) on hands and knees, syncing with breath"
   },
   {
     name: "Corpse Pose",
@@ -67,7 +73,8 @@ const yogaPoses: YogaPose[] = [
     description: "The ultimate relaxation pose that integrates the benefits of your practice.",
     benefits: ["Deep relaxation", "Reduces blood pressure", "Calms the mind", "Integrates practice benefits"],
     steps: ["Lie flat on your back", "Let feet fall open", "Arms relaxed at sides", "Close your eyes", "Relax every muscle", "Focus on breath", "Let go completely"],
-    image: "😌"
+    image: "😌",
+    finalPoseImage: "Lying flat on back, arms and legs slightly apart, palms facing up, complete stillness and surrender"
   },
   {
     name: "Downward Dog",
@@ -76,7 +83,8 @@ const yogaPoses: YogaPose[] = [
     description: "An energizing pose that stretches the entire body.",
     benefits: ["Stretches hamstrings", "Strengthens arms", "Calms the brain", "Energizes body"],
     steps: ["Start on hands and knees", "Tuck toes, lift hips up", "Straighten legs", "Press hands firmly", "Relax head between arms", "Pedal feet gently"],
-    image: "🐕"
+    image: "🐕",
+    finalPoseImage: "Inverted V-shape: hips high, arms and legs straight, heels reaching toward floor, head relaxed"
   },
   {
     name: "Seated Meditation",
@@ -85,7 +93,8 @@ const yogaPoses: YogaPose[] = [
     description: "A comfortable seated position for meditation and pranayama.",
     benefits: ["Calms the mind", "Improves posture", "Opens hips", "Promotes inner peace"],
     steps: ["Sit cross-legged", "Spine tall and straight", "Hands on knees", "Close eyes", "Focus on breath", "Let thoughts pass", "Rest in stillness"],
-    image: "🪷"
+    image: "🪷",
+    finalPoseImage: "Cross-legged seated, spine tall, hands resting on knees in mudra, eyes closed, serene expression"
   },
 ];
 
@@ -241,6 +250,16 @@ export const YogaPoses = () => {
               ✓ {benefit}
             </span>
           ))}
+        </div>
+
+        {/* Final Pose Image/Description - Pro Feature */}
+        <div className="p-4 rounded-lg bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
+          <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+            <span>🎯</span> Final Pose Visualization
+          </h4>
+          <p className="text-sm text-muted-foreground italic">
+            {currentPose.finalPoseImage}
+          </p>
         </div>
 
         {/* Navigation */}

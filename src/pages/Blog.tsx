@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileIcon } from "@/components/ProfileIcon";
 import { PanelLeft, Newspaper, Clock, ArrowRight } from "lucide-react";
 
 interface BlogPost {
@@ -328,7 +330,9 @@ const Blog = () => {
                 ← Back to Posts
               </Button>
             )}
+            <NotificationBell />
             <ThemeToggle />
+            <ProfileIcon />
           </div>
         </header>
 

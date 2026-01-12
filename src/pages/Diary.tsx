@@ -416,8 +416,13 @@ const Diary = () => {
               {isPro && (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" title="Download PDF">
-                      <Download className="w-4 h-4" />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      title="Download PDF"
+                      className="border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 ring-2 ring-amber-400/30"
+                    >
+                      <Download className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent>

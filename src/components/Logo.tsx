@@ -46,111 +46,136 @@ export const Logo = ({ className, size = "md", showText = true, clickable = true
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
+          {/* Gradient for the head silhouette */}
           <linearGradient id="headGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(142, 76%, 36%)" />
-            <stop offset="50%" stopColor="hsl(142, 70%, 45%)" />
-            <stop offset="100%" stopColor="hsl(160, 60%, 50%)" />
+            <stop offset="0%" stopColor="hsl(142, 76%, 30%)" />
+            <stop offset="100%" stopColor="hsl(142, 70%, 45%)" />
           </linearGradient>
-          <linearGradient id="flowerGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(330, 80%, 70%)" />
-            <stop offset="100%" stopColor="hsl(350, 75%, 60%)" />
+          {/* Gradient for pink flower petals */}
+          <linearGradient id="pinkFlower" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(340, 82%, 65%)" />
+            <stop offset="100%" stopColor="hsl(350, 75%, 55%)" />
           </linearGradient>
-          <linearGradient id="flowerGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(45, 90%, 65%)" />
-            <stop offset="100%" stopColor="hsl(35, 85%, 55%)" />
+          {/* Gradient for coral/peach flower */}
+          <linearGradient id="coralFlower" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(15, 85%, 65%)" />
+            <stop offset="100%" stopColor="hsl(20, 80%, 55%)" />
           </linearGradient>
-          <linearGradient id="flowerGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(280, 70%, 65%)" />
-            <stop offset="100%" stopColor="hsl(270, 65%, 55%)" />
+          {/* Gradient for lavender flower */}
+          <linearGradient id="lavenderFlower" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(280, 60%, 70%)" />
+            <stop offset="100%" stopColor="hsl(270, 55%, 60%)" />
           </linearGradient>
-          <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(142, 60%, 50%)" />
+          {/* Gradient for leaves */}
+          <linearGradient id="leafGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(142, 65%, 45%)" />
             <stop offset="100%" stopColor="hsl(142, 70%, 35%)" />
           </linearGradient>
-          <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(30, 60%, 75%)" />
-            <stop offset="100%" stopColor="hsl(25, 50%, 65%)" />
+          {/* Gradient for hair/crown area */}
+          <linearGradient id="hairGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(30, 30%, 25%)" />
+            <stop offset="100%" stopColor="hsl(25, 25%, 20%)" />
           </linearGradient>
         </defs>
         
-        {/* Human head silhouette - stylized profile */}
-        <ellipse cx="50" cy="55" rx="25" ry="30" fill="url(#headGradient)" />
-        
-        {/* Face area - lighter inner glow */}
-        <ellipse cx="50" cy="58" rx="18" ry="22" fill="url(#headGradient)" opacity="0.8" />
-        
-        {/* Peaceful closed eyes */}
+        {/* Head silhouette - profile facing slightly right */}
         <path
-          d="M38 52 Q42 50 46 52"
-          stroke="hsl(142, 60%, 25%)"
-          strokeWidth="1.5"
+          d="M35 85 
+             C25 85 20 75 20 65
+             L20 55
+             C20 35 30 20 50 20
+             C70 20 80 35 80 55
+             L80 65
+             C80 75 75 85 65 85
+             Z"
+          fill="url(#headGradient)"
+        />
+        
+        {/* Hair/crown area */}
+        <path
+          d="M25 45
+             C25 30 35 18 50 18
+             C65 18 75 30 75 45
+             C70 35 60 28 50 28
+             C40 28 30 35 25 45
+             Z"
+          fill="url(#hairGradient)"
+          opacity="0.8"
+        />
+        
+        {/* Peaceful closed eyes - curved lines */}
+        <path
+          d="M38 52 Q42 49 46 52"
+          stroke="hsl(142, 40%, 20%)"
+          strokeWidth="2"
           strokeLinecap="round"
           fill="none"
         />
         <path
-          d="M54 52 Q58 50 62 52"
-          stroke="hsl(142, 60%, 25%)"
-          strokeWidth="1.5"
+          d="M54 52 Q58 49 62 52"
+          stroke="hsl(142, 40%, 20%)"
+          strokeWidth="2"
           strokeLinecap="round"
           fill="none"
         />
         
         {/* Gentle smile */}
         <path
-          d="M44 64 Q50 68 56 64"
-          stroke="hsl(142, 60%, 25%)"
+          d="M42 65 Q50 70 58 65"
+          stroke="hsl(142, 40%, 20%)"
           strokeWidth="1.5"
           strokeLinecap="round"
           fill="none"
         />
         
-        {/* Hair/crown area with flowers */}
-        <path
-          d="M25 45 Q30 25 50 22 Q70 25 75 45 Q65 35 50 32 Q35 35 25 45"
-          fill="url(#headGradient)"
-          opacity="0.9"
-        />
-        
-        {/* Main center flower (large pink) */}
-        <g transform="translate(50, 18)">
-          <circle cx="0" cy="0" r="7" fill="url(#flowerGradient1)" />
-          <circle cx="-5" cy="-4" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
-          <circle cx="5" cy="-4" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
-          <circle cx="-6" cy="2" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
-          <circle cx="6" cy="2" r="4" fill="url(#flowerGradient1)" opacity="0.9" />
-          <circle cx="0" cy="5" r="3" fill="url(#flowerGradient1)" opacity="0.8" />
-          <circle cx="0" cy="0" r="3" fill="hsl(45, 90%, 65%)" />
+        {/* Main center flower (large pink rose-like) */}
+        <g transform="translate(50, 12)">
+          {/* Outer petals */}
+          <ellipse cx="-6" cy="-2" rx="5" ry="6" fill="url(#pinkFlower)" opacity="0.9" transform="rotate(-30 -6 -2)" />
+          <ellipse cx="6" cy="-2" rx="5" ry="6" fill="url(#pinkFlower)" opacity="0.9" transform="rotate(30 6 -2)" />
+          <ellipse cx="-7" cy="4" rx="5" ry="5" fill="url(#pinkFlower)" opacity="0.85" transform="rotate(-45 -7 4)" />
+          <ellipse cx="7" cy="4" rx="5" ry="5" fill="url(#pinkFlower)" opacity="0.85" transform="rotate(45 7 4)" />
+          <ellipse cx="0" cy="7" rx="4" ry="5" fill="url(#pinkFlower)" opacity="0.8" />
+          {/* Center */}
+          <circle cx="0" cy="2" r="4" fill="hsl(50, 90%, 60%)" />
+          <circle cx="0" cy="2" r="2" fill="hsl(45, 85%, 50%)" />
         </g>
         
-        {/* Left flower (yellow) */}
-        <g transform="translate(32, 26)">
-          <circle cx="0" cy="0" r="5" fill="url(#flowerGradient2)" />
-          <circle cx="-4" cy="-2" r="3" fill="url(#flowerGradient2)" opacity="0.9" />
-          <circle cx="4" cy="-2" r="3" fill="url(#flowerGradient2)" opacity="0.9" />
-          <circle cx="-3" cy="3" r="3" fill="url(#flowerGradient2)" opacity="0.8" />
-          <circle cx="3" cy="3" r="3" fill="url(#flowerGradient2)" opacity="0.8" />
-          <circle cx="0" cy="0" r="2" fill="hsl(25, 80%, 50%)" />
+        {/* Left flower (coral/peach) */}
+        <g transform="translate(30, 22)">
+          <ellipse cx="-4" cy="-1" rx="4" ry="5" fill="url(#coralFlower)" opacity="0.9" transform="rotate(-25 -4 -1)" />
+          <ellipse cx="4" cy="-1" rx="4" ry="5" fill="url(#coralFlower)" opacity="0.9" transform="rotate(25 4 -1)" />
+          <ellipse cx="-5" cy="3" rx="4" ry="4" fill="url(#coralFlower)" opacity="0.85" transform="rotate(-40 -5 3)" />
+          <ellipse cx="5" cy="3" rx="4" ry="4" fill="url(#coralFlower)" opacity="0.85" transform="rotate(40 5 3)" />
+          <circle cx="0" cy="1" r="3" fill="hsl(50, 85%, 60%)" />
+          <circle cx="0" cy="1" r="1.5" fill="hsl(40, 80%, 50%)" />
         </g>
         
-        {/* Right flower (purple) */}
-        <g transform="translate(68, 26)">
-          <circle cx="0" cy="0" r="5" fill="url(#flowerGradient3)" />
-          <circle cx="-4" cy="-2" r="3" fill="url(#flowerGradient3)" opacity="0.9" />
-          <circle cx="4" cy="-2" r="3" fill="url(#flowerGradient3)" opacity="0.9" />
-          <circle cx="-3" cy="3" r="3" fill="url(#flowerGradient3)" opacity="0.8" />
-          <circle cx="3" cy="3" r="3" fill="url(#flowerGradient3)" opacity="0.8" />
-          <circle cx="0" cy="0" r="2" fill="hsl(45, 85%, 65%)" />
+        {/* Right flower (lavender) */}
+        <g transform="translate(70, 22)">
+          <ellipse cx="-4" cy="-1" rx="4" ry="5" fill="url(#lavenderFlower)" opacity="0.9" transform="rotate(-25 -4 -1)" />
+          <ellipse cx="4" cy="-1" rx="4" ry="5" fill="url(#lavenderFlower)" opacity="0.9" transform="rotate(25 4 -1)" />
+          <ellipse cx="-5" cy="3" rx="4" ry="4" fill="url(#lavenderFlower)" opacity="0.85" transform="rotate(-40 -5 3)" />
+          <ellipse cx="5" cy="3" rx="4" ry="4" fill="url(#lavenderFlower)" opacity="0.85" transform="rotate(40 5 3)" />
+          <circle cx="0" cy="1" r="3" fill="hsl(55, 85%, 65%)" />
+          <circle cx="0" cy="1" r="1.5" fill="hsl(50, 80%, 55%)" />
         </g>
         
-        {/* Small decorative buds */}
-        <circle cx="40" cy="20" r="2.5" fill="url(#flowerGradient1)" opacity="0.7" />
-        <circle cx="60" cy="20" r="2.5" fill="url(#flowerGradient3)" opacity="0.7" />
+        {/* Small accent flowers/buds */}
+        <circle cx="40" cy="16" r="3" fill="url(#pinkFlower)" opacity="0.7" />
+        <circle cx="60" cy="16" r="3" fill="url(#lavenderFlower)" opacity="0.7" />
+        <circle cx="22" cy="32" r="2.5" fill="url(#coralFlower)" opacity="0.6" />
+        <circle cx="78" cy="32" r="2.5" fill="url(#pinkFlower)" opacity="0.6" />
         
-        {/* Leaves */}
-        <ellipse cx="24" cy="35" rx="5" ry="2.5" fill="url(#leafGradient)" transform="rotate(-45 24 35)" />
-        <ellipse cx="76" cy="35" rx="5" ry="2.5" fill="url(#leafGradient)" transform="rotate(45 76 35)" />
-        <ellipse cx="42" cy="14" rx="4" ry="1.5" fill="url(#leafGradient)" transform="rotate(-30 42 14)" />
-        <ellipse cx="58" cy="14" rx="4" ry="1.5" fill="url(#leafGradient)" transform="rotate(30 58 14)" />
+        {/* Decorative leaves */}
+        <ellipse cx="18" cy="38" rx="6" ry="2.5" fill="url(#leafGreen)" transform="rotate(-55 18 38)" />
+        <ellipse cx="82" cy="38" rx="6" ry="2.5" fill="url(#leafGreen)" transform="rotate(55 82 38)" />
+        <ellipse cx="38" cy="10" rx="4" ry="1.5" fill="url(#leafGreen)" transform="rotate(-35 38 10)" />
+        <ellipse cx="62" cy="10" rx="4" ry="1.5" fill="url(#leafGreen)" transform="rotate(35 62 10)" />
+        
+        {/* Small leaf accents near flowers */}
+        <ellipse cx="24" cy="28" rx="3" ry="1.2" fill="url(#leafGreen)" transform="rotate(-60 24 28)" />
+        <ellipse cx="76" cy="28" rx="3" ry="1.2" fill="url(#leafGreen)" transform="rotate(60 76 28)" />
       </svg>
       {showText && (
         <span className={cn(

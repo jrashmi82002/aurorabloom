@@ -8,10 +8,11 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
-import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen } from "lucide-react";
+import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon } from "lucide-react";
 import { useCalmingSounds } from "@/hooks/useCalmingSounds";
 import { GitaVerses } from "@/components/activities/GitaVerses";
 import { YogaPoses } from "@/components/activities/YogaPoses";
+import { Meditation } from "@/components/activities/Meditation";
 
 const Activities = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -267,6 +268,14 @@ const Activities = () => {
       isPro: true,
     },
     {
+      id: "meditation",
+      title: "Meditation",
+      description: "Guided meditation with calming sounds",
+      icon: Moon,
+      color: "from-purple-400 to-indigo-500",
+      isPro: true,
+    },
+    {
       id: "memory",
       title: "Memory Match",
       description: "Relaxing memory card game",
@@ -380,10 +389,11 @@ const Activities = () => {
                     <div className="flex items-start gap-3">
                       <Crown className="w-6 h-6 text-amber-500 shrink-0" />
                       <div>
-                        <p className="font-medium">Unlock 5 More Activities with Pro!</p>
+                        <p className="font-medium">Unlock 6 More Activities with Pro!</p>
                         <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
                           <li>📖 <strong>Gita Wisdom</strong> - Sacred verses with healing stories</li>
                           <li>🧘 <strong>Yoga Asanas</strong> - Guided poses with timer & benefits</li>
+                          <li>🌙 <strong>Meditation</strong> - Guided meditation with calming sounds & bell</li>
                           <li>🧩 <strong>Memory Match</strong> - Relaxing memory card game</li>
                           <li>⏱️ <strong>Focus Timer</strong> - Pomodoro-style focus sessions</li>
                           <li>🙏 <strong>Gratitude Journal</strong> - Daily gratitude reflection</li>
@@ -591,51 +601,79 @@ const Activities = () => {
                 {activeGame === "focus" && (
                   <Card className="overflow-hidden">
                     <CardHeader>
-                      <CardTitle>Focus Timer</CardTitle>
-                      <CardDescription>Pomodoro-style deep focus session</CardDescription>
+                      <CardTitle className="flex items-center gap-2">
+                        <Timer className="w-5 h-5" />
+                        Focus Timer
+                      </CardTitle>
+                      <CardDescription>
+                        Pomodoro-style deep focus session
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center py-8">
-                      <div className="text-6xl font-mono font-bold mb-8">
-                        {formatTime(focusTime)}
+                    <CardContent className="space-y-6">
+                      {/* What is Focus Timer */}
+                      <div className="p-4 rounded-lg bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border border-teal-500/20">
+                        <h4 className="font-semibold text-sm mb-2">🎯 What is the Focus Timer?</h4>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Based on the Pomodoro Technique, this timer helps you maintain deep focus by working in concentrated intervals. It's scientifically proven to improve productivity and reduce mental fatigue.
+                        </p>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <p>✨ <strong>How to use:</strong></p>
+                          <ol className="list-decimal list-inside space-y-1 ml-2">
+                            <li>Choose your focus duration (25 min recommended)</li>
+                            <li>Remove all distractions - put phone away</li>
+                            <li>Press Start and focus on ONE task only</li>
+                            <li>When timer ends, take a 5-minute break</li>
+                            <li>Repeat for maximum productivity!</li>
+                          </ol>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="lg"
-                          onClick={() => setFocusRunning(!focusRunning)}
-                          className="gap-2"
-                        >
-                          {focusRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                          {focusRunning ? "Pause" : "Start"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          onClick={() => {
-                            setFocusRunning(false);
-                            setFocusTime(25 * 60);
-                          }}
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        {[5, 15, 25, 45].map((mins) => (
+
+                      {/* Timer Display */}
+                      <div className="flex flex-col items-center py-4">
+                        <div className="text-6xl font-mono font-bold mb-8">
+                          {formatTime(focusTime)}
+                        </div>
+                        <div className="flex gap-2">
                           <Button
-                            key={mins}
-                            variant="ghost"
-                            size="sm"
+                            size="lg"
+                            onClick={() => setFocusRunning(!focusRunning)}
+                            className="gap-2"
+                          >
+                            {focusRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                            {focusRunning ? "Pause" : "Start"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="lg"
                             onClick={() => {
                               setFocusRunning(false);
-                              setFocusTime(mins * 60);
+                              setFocusTime(25 * 60);
                             }}
                           >
-                            {mins}m
+                            Reset
                           </Button>
-                        ))}
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          {[5, 15, 25, 45].map((mins) => (
+                            <Button
+                              key={mins}
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setFocusRunning(false);
+                                setFocusTime(mins * 60);
+                              }}
+                            >
+                              {mins}m
+                            </Button>
+                          ))}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 )}
+
+                {activeGame === "meditation" && <Meditation />}
 
                 {activeGame === "gratitude" && (
                   <Card className="overflow-hidden">
