@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { Logo } from "@/components/Logo";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Mail, CheckCircle } from "lucide-react";
 
 const ageGroups = [
   { value: "under-18", label: "Under 18" },
@@ -35,33 +34,8 @@ const Auth = () => {
   const [genderIdentity, setGenderIdentity] = useState("");
   const [loading, setLoading] = useState(false);
   const [signupStep, setSignupStep] = useState(1);
-  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
-  const [verifiedEmail, setVerifiedEmail] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-
-  // Check if user just verified their email
-  useEffect(() => {
-    const checkEmailVerification = async () => {
-      // Check for email confirmation from URL hash
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get("access_token");
-      const type = hashParams.get("type");
-      
-      if (accessToken && type === "signup") {
-        // User just confirmed their email
-        toast({
-          title: "Email Verified!",
-          description: "Your email has been verified. You can now sign in.",
-        });
-        // Clear the hash
-        window.history.replaceState(null, "", window.location.pathname);
-      }
-    };
-    
-    checkEmailVerification();
-  }, [toast]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,37 +43,11 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        
-        if (error) {
-          // Check if the error is due to unverified email
-          if (error.message.includes("Email not confirmed")) {
-            toast({
-              title: "Email Not Verified",
-              description: "Please check your email and click the verification link before signing in.",
-              variant: "destructive",
-            });
-            setLoading(false);
-            return;
-          }
-          throw error;
-        }
-        
-        // Check if email is confirmed
-        if (data.user && !data.user.email_confirmed_at) {
-          await supabase.auth.signOut();
-          toast({
-            title: "Email Not Verified",
-            description: "Please verify your email before signing in. Check your inbox for the verification link.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-        
+        if (error) throw error;
         navigate("/");
       } else {
         // Validate signup step 1 before proceeding
@@ -113,24 +61,12 @@ const Auth = () => {
             setLoading(false);
             return;
           }
-          
-          // Validate password strength
-          if (password.length < 6) {
-            toast({
-              title: "Weak Password",
-              description: "Password must be at least 6 characters long",
-              variant: "destructive",
-            });
-            setLoading(false);
-            return;
-          }
-          
           setSignupStep(2);
           setLoading(false);
           return;
         }
 
-        // Signup with email verification required
+        // Signup with email verification
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -140,7 +76,7 @@ const Auth = () => {
               age_group: ageGroup,
               gender_identity: genderIdentity,
             },
-            emailRedirectTo: `${window.location.origin}/auth`,
+            emailRedirectTo: `${window.location.origin}/`,
           },
         });
 
@@ -156,38 +92,11 @@ const Auth = () => {
           });
         }
 
-        // Show verification message
-        setVerifiedEmail(email);
-        setShowVerificationMessage(true);
+        toast({
+          title: "Check your email!",
+          description: "We've sent you a verification link. Please check your inbox to confirm your account.",
+        });
       }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resendVerificationEmail = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: verifiedEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
-        },
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Email Sent",
-        description: "We've sent another verification email. Please check your inbox.",
-      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -201,8 +110,6 @@ const Auth = () => {
 
   const resetSignup = () => {
     setIsLogin(true);
-    setShowVerificationMessage(false);
-    setVerifiedEmail("");
     setSignupStep(1);
     setEmail("");
     setPassword("");
@@ -210,61 +117,6 @@ const Auth = () => {
     setAgeGroup("");
     setGenderIdentity("");
   };
-
-  // Show verification message after signup
-  if (showVerificationMessage) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-soft p-4">
-        <Card className="w-full max-w-md shadow-calm border-0">
-          <CardHeader className="text-center space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Mail className="w-8 h-8 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl font-serif">Verify Your Email</CardTitle>
-            <CardDescription className="text-base">
-              We've sent a verification link to <strong>{verifiedEmail}</strong>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  Check your inbox and click the verification link to activate your account
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  If you don't see the email, check your spam folder
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-2">
-              <Button
-                onClick={resendVerificationEmail}
-                variant="outline"
-                disabled={loading}
-                className="w-full"
-              >
-                {loading ? "Sending..." : "Resend Verification Email"}
-              </Button>
-              <Button
-                onClick={resetSignup}
-                variant="ghost"
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-soft p-4">
