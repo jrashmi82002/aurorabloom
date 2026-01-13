@@ -9,22 +9,64 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify the caller is an admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Get the current user
+    const { data: { user }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !user) {
+      throw new Error("Unauthorized");
+    }
+
+    // Check if user is admin
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .single();
+
+    if (!roleData) {
+      throw new Error("Admin access required");
+    }
+
     const { subject, message, targetUserIds } = await req.json();
 
     if (!subject || !message) {
       throw new Error("Subject and message are required");
     }
 
-    // Create Supabase client with service role
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Escape HTML in user-provided content
+    const safeSubject = escapeHtml(subject);
+    const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
 
     // Get user emails - either specific users or all users with profiles
     let emails: string[] = [];
@@ -70,15 +112,15 @@ serve(async (req) => {
     const html = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #22c55e; margin: 0;">🌿 Healing Haven</h1>
+          <h1 style="color: #22c55e; margin: 0;">🌿 Aurora Bloom</h1>
         </div>
-        <div style="font-size: 16px; color: #374151; line-height: 1.8; white-space: pre-wrap;">
-          ${message}
+        <div style="font-size: 16px; color: #374151; line-height: 1.8;">
+          ${safeMessage}
         </div>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
         <p style="font-size: 14px; color: #6b7280; text-align: center;">
           With warmth,<br>
-          The Healing Haven Team
+          The Aurora Bloom Team
         </p>
         <p style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 20px;">
           You're receiving this because you're part of our healing community.
@@ -86,7 +128,7 @@ serve(async (req) => {
       </div>
     `;
 
-    // Create notifications for all target users
+    // Create notifications for all target users (store unescaped message for internal use)
     const notificationPromises = userIds.map(userId =>
       supabase.from("notifications").insert({
         user_id: userId,
@@ -98,7 +140,7 @@ serve(async (req) => {
     );
 
     await Promise.all(notificationPromises);
-    console.log(`Created ${userIds.length} notifications`);
+    console.log(`Admin ${user.id} created ${userIds.length} notifications`);
 
     // Send emails in batches to avoid rate limits
     let sentCount = 0;
@@ -109,9 +151,9 @@ serve(async (req) => {
       
       const promises = batch.map((email) =>
         resend.emails.send({
-          from: "Healing Haven <onboarding@resend.dev>",
+          from: "Aurora Bloom <onboarding@resend.dev>",
           to: [email],
-          subject,
+          subject: safeSubject,
           html,
         }).catch((err: Error) => {
           console.error(`Failed to send to ${email}:`, err);
@@ -128,7 +170,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Broadcast sent to ${sentCount}/${emails.length} users`);
+    console.log(`Admin ${user.id} broadcast sent to ${sentCount}/${emails.length} users`);
 
     return new Response(
       JSON.stringify({ success: true, sentCount, totalUsers: emails.length, notificationsCreated: userIds.length }),
