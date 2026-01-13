@@ -9,6 +9,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -53,17 +63,21 @@ serve(async (req) => {
       throw new Error("No recipients provided");
     }
 
+    // Escape HTML in user-provided content
+    const safeSubject = escapeHtml(subject);
+    const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+
     const html = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #7c3aed; margin: 0;">${subject}</h1>
+          <h1 style="color: #7c3aed; margin: 0;">${safeSubject}</h1>
         </div>
         <div style="font-size: 16px; color: #374151; line-height: 1.8;">
-          ${message.replace(/\n/g, "<br>")}
+          ${safeMessage}
         </div>
         <p style="font-size: 14px; color: #6b7280; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
           With warmth,<br>
-          The Healing Haven Team
+          The Aurora Bloom Team
         </p>
       </div>
     `;
@@ -72,7 +86,7 @@ serve(async (req) => {
     const results = await Promise.allSettled(
       emails.map((email: string) =>
         resend.emails.send({
-          from: "Healing Haven <onboarding@resend.dev>",
+          from: "Aurora Bloom <onboarding@resend.dev>",
           to: [email],
           subject,
           html,
@@ -105,7 +119,7 @@ serve(async (req) => {
       await supabaseClient.from("notifications").insert(notifications);
     }
 
-    console.log(`Sent ${successCount}/${emails.length} emails`);
+    console.log(`Admin ${user.id} sent ${successCount}/${emails.length} targeted emails`);
 
     return new Response(JSON.stringify({ success: true, sentCount: successCount }), {
       status: 200,
