@@ -41,141 +41,116 @@ export const Logo = ({ className, size = "md", showText = true, clickable = true
     >
       <svg
         viewBox="0 0 100 100"
-        className={cn(sizes[size], "text-primary")}
+        className={cn(sizes[size])}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <defs>
-          {/* Gradient for the head silhouette */}
-          <linearGradient id="headGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(142, 76%, 30%)" />
-            <stop offset="100%" stopColor="hsl(142, 70%, 45%)" />
-          </linearGradient>
-          {/* Gradient for pink flower petals */}
-          <linearGradient id="pinkFlower" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(340, 82%, 65%)" />
-            <stop offset="100%" stopColor="hsl(350, 75%, 55%)" />
-          </linearGradient>
-          {/* Gradient for coral/peach flower */}
-          <linearGradient id="coralFlower" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(15, 85%, 65%)" />
-            <stop offset="100%" stopColor="hsl(20, 80%, 55%)" />
-          </linearGradient>
-          {/* Gradient for lavender flower */}
-          <linearGradient id="lavenderFlower" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(280, 60%, 70%)" />
-            <stop offset="100%" stopColor="hsl(270, 55%, 60%)" />
-          </linearGradient>
-          {/* Gradient for leaves */}
-          <linearGradient id="leafGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(142, 65%, 45%)" />
-            <stop offset="100%" stopColor="hsl(142, 70%, 35%)" />
-          </linearGradient>
-          {/* Gradient for hair/crown area */}
-          <linearGradient id="hairGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(30, 30%, 25%)" />
-            <stop offset="100%" stopColor="hsl(25, 25%, 20%)" />
-          </linearGradient>
-        </defs>
+        {/* Circular frame */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="46" 
+          stroke="currentColor" 
+          strokeWidth="1.5"
+          className="text-primary"
+        />
         
-        {/* Head silhouette - profile facing slightly right */}
+        {/* Stylized profile silhouette - peaceful face looking slightly up */}
         <path
-          d="M35 85 
-             C25 85 20 75 20 65
-             L20 55
-             C20 35 30 20 50 20
-             C70 20 80 35 80 55
-             L80 65
-             C80 75 75 85 65 85
+          d="M35 72 
+             C30 72 28 65 28 60
+             L28 52
+             C28 42 32 35 38 32
+             C40 31 42 30 45 30
+             C48 30 51 31 53 33
+             C58 36 62 42 62 52
+             L62 60
+             C62 65 60 72 55 72
              Z"
-          fill="url(#headGradient)"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-primary"
         />
         
-        {/* Hair/crown area */}
+        {/* Flowing hair with botanical elements */}
         <path
-          d="M25 45
-             C25 30 35 18 50 18
-             C65 18 75 30 75 45
-             C70 35 60 28 50 28
-             C40 28 30 35 25 45
-             Z"
-          fill="url(#hairGradient)"
-          opacity="0.8"
+          d="M32 45
+             C30 38 35 28 45 26
+             C55 24 65 30 68 40
+             C70 48 68 55 65 58"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          className="text-primary"
         />
         
-        {/* Peaceful closed eyes - curved lines */}
+        {/* Decorative leaf/petal elements emerging from head - left */}
         <path
-          d="M38 52 Q42 49 46 52"
-          stroke="hsl(142, 40%, 20%)"
-          strokeWidth="2"
+          d="M38 28 C35 22 38 16 42 14 C46 12 50 14 48 20 C46 26 42 28 38 28"
+          stroke="currentColor"
+          strokeWidth="1.2"
           strokeLinecap="round"
-          fill="none"
+          className="text-primary"
+        />
+        
+        {/* Center bloom */}
+        <path
+          d="M48 26 C48 18 52 12 56 12 C60 12 62 18 58 24 C54 28 50 28 48 26"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          className="text-primary"
+        />
+        
+        {/* Right decorative element */}
+        <path
+          d="M58 28 C62 22 68 20 72 24 C76 28 74 34 68 34 C62 34 58 32 58 28"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          className="text-primary"
+        />
+        
+        {/* Small accent dots/buds */}
+        <circle cx="44" cy="18" r="1.5" fill="currentColor" className="text-primary" />
+        <circle cx="54" cy="15" r="1.5" fill="currentColor" className="text-primary" />
+        <circle cx="64" cy="22" r="1.5" fill="currentColor" className="text-primary" />
+        
+        {/* Peaceful closed eyes */}
+        <path
+          d="M38 50 Q42 48 46 50"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          className="text-primary"
         />
         <path
-          d="M54 52 Q58 49 62 52"
-          stroke="hsl(142, 40%, 20%)"
-          strokeWidth="2"
+          d="M50 50 Q54 48 58 50"
+          stroke="currentColor"
+          strokeWidth="1.2"
           strokeLinecap="round"
-          fill="none"
+          className="text-primary"
         />
         
         {/* Gentle smile */}
         <path
-          d="M42 65 Q50 70 58 65"
-          stroke="hsl(142, 40%, 20%)"
-          strokeWidth="1.5"
+          d="M42 60 Q48 64 54 60"
+          stroke="currentColor"
+          strokeWidth="1.2"
           strokeLinecap="round"
-          fill="none"
+          className="text-primary"
         />
         
-        {/* Main center flower (large pink rose-like) */}
-        <g transform="translate(50, 12)">
-          {/* Outer petals */}
-          <ellipse cx="-6" cy="-2" rx="5" ry="6" fill="url(#pinkFlower)" opacity="0.9" transform="rotate(-30 -6 -2)" />
-          <ellipse cx="6" cy="-2" rx="5" ry="6" fill="url(#pinkFlower)" opacity="0.9" transform="rotate(30 6 -2)" />
-          <ellipse cx="-7" cy="4" rx="5" ry="5" fill="url(#pinkFlower)" opacity="0.85" transform="rotate(-45 -7 4)" />
-          <ellipse cx="7" cy="4" rx="5" ry="5" fill="url(#pinkFlower)" opacity="0.85" transform="rotate(45 7 4)" />
-          <ellipse cx="0" cy="7" rx="4" ry="5" fill="url(#pinkFlower)" opacity="0.8" />
-          {/* Center */}
-          <circle cx="0" cy="2" r="4" fill="hsl(50, 90%, 60%)" />
-          <circle cx="0" cy="2" r="2" fill="hsl(45, 85%, 50%)" />
-        </g>
-        
-        {/* Left flower (coral/peach) */}
-        <g transform="translate(30, 22)">
-          <ellipse cx="-4" cy="-1" rx="4" ry="5" fill="url(#coralFlower)" opacity="0.9" transform="rotate(-25 -4 -1)" />
-          <ellipse cx="4" cy="-1" rx="4" ry="5" fill="url(#coralFlower)" opacity="0.9" transform="rotate(25 4 -1)" />
-          <ellipse cx="-5" cy="3" rx="4" ry="4" fill="url(#coralFlower)" opacity="0.85" transform="rotate(-40 -5 3)" />
-          <ellipse cx="5" cy="3" rx="4" ry="4" fill="url(#coralFlower)" opacity="0.85" transform="rotate(40 5 3)" />
-          <circle cx="0" cy="1" r="3" fill="hsl(50, 85%, 60%)" />
-          <circle cx="0" cy="1" r="1.5" fill="hsl(40, 80%, 50%)" />
-        </g>
-        
-        {/* Right flower (lavender) */}
-        <g transform="translate(70, 22)">
-          <ellipse cx="-4" cy="-1" rx="4" ry="5" fill="url(#lavenderFlower)" opacity="0.9" transform="rotate(-25 -4 -1)" />
-          <ellipse cx="4" cy="-1" rx="4" ry="5" fill="url(#lavenderFlower)" opacity="0.9" transform="rotate(25 4 -1)" />
-          <ellipse cx="-5" cy="3" rx="4" ry="4" fill="url(#lavenderFlower)" opacity="0.85" transform="rotate(-40 -5 3)" />
-          <ellipse cx="5" cy="3" rx="4" ry="4" fill="url(#lavenderFlower)" opacity="0.85" transform="rotate(40 5 3)" />
-          <circle cx="0" cy="1" r="3" fill="hsl(55, 85%, 65%)" />
-          <circle cx="0" cy="1" r="1.5" fill="hsl(50, 80%, 55%)" />
-        </g>
-        
-        {/* Small accent flowers/buds */}
-        <circle cx="40" cy="16" r="3" fill="url(#pinkFlower)" opacity="0.7" />
-        <circle cx="60" cy="16" r="3" fill="url(#lavenderFlower)" opacity="0.7" />
-        <circle cx="22" cy="32" r="2.5" fill="url(#coralFlower)" opacity="0.6" />
-        <circle cx="78" cy="32" r="2.5" fill="url(#pinkFlower)" opacity="0.6" />
-        
-        {/* Decorative leaves */}
-        <ellipse cx="18" cy="38" rx="6" ry="2.5" fill="url(#leafGreen)" transform="rotate(-55 18 38)" />
-        <ellipse cx="82" cy="38" rx="6" ry="2.5" fill="url(#leafGreen)" transform="rotate(55 82 38)" />
-        <ellipse cx="38" cy="10" rx="4" ry="1.5" fill="url(#leafGreen)" transform="rotate(-35 38 10)" />
-        <ellipse cx="62" cy="10" rx="4" ry="1.5" fill="url(#leafGreen)" transform="rotate(35 62 10)" />
-        
-        {/* Small leaf accents near flowers */}
-        <ellipse cx="24" cy="28" rx="3" ry="1.2" fill="url(#leafGreen)" transform="rotate(-60 24 28)" />
-        <ellipse cx="76" cy="28" rx="3" ry="1.2" fill="url(#leafGreen)" transform="rotate(60 76 28)" />
+        {/* Small decorative flourish at bottom */}
+        <path
+          d="M35 80 C40 78 45 82 50 80 C55 78 60 82 65 80"
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeLinecap="round"
+          className="text-primary/60"
+        />
       </svg>
       {showText && (
         <span className={cn(
