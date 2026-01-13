@@ -45,84 +45,79 @@ export const Logo = ({ className, size = "md", showText = true, clickable = true
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Circular frame */}
+        {/* Outer circle - filled background */}
         <circle 
           cx="50" 
           cy="50" 
           r="46" 
-          stroke="currentColor" 
-          strokeWidth="1.5"
+          fill="currentColor"
           className="text-primary"
         />
         
-        {/* Head */}
-        <circle 
-          cx="50" 
-          cy="28" 
-          r="10" 
-          stroke="currentColor" 
-          strokeWidth="1.5"
-          className="text-primary"
-        />
-        
-        {/* Body - torso */}
-        <path
-          d="M50 38 L50 55"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          className="text-primary"
-        />
-        
-        {/* Arms in meditation pose - hands resting on knees */}
-        <path
-          d="M50 45 C45 48 38 52 32 58"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          className="text-primary"
-        />
-        <path
-          d="M50 45 C55 48 62 52 68 58"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          className="text-primary"
-        />
-        
-        {/* Legs in lotus position */}
-        <path
-          d="M50 55 C42 58 35 62 30 68 C28 70 30 72 34 72 C42 72 48 68 50 65"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-primary"
-        />
-        <path
-          d="M50 55 C58 58 65 62 70 68 C72 70 70 72 66 72 C58 72 52 68 50 65"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-primary"
-        />
-        
-        {/* Subtle aura/glow lines above head */}
-        <path
-          d="M42 15 C45 12 50 10 50 10 C50 10 55 12 58 15"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeLinecap="round"
-          className="text-primary/50"
-        />
-        <path
-          d="M45 11 C48 8 50 6 50 6 C50 6 52 8 55 11"
-          stroke="currentColor"
-          strokeWidth="0.8"
-          strokeLinecap="round"
-          className="text-primary/30"
-        />
+        {/* Inner content in contrasting color */}
+        <g className="text-primary-foreground">
+          {/* Head - filled */}
+          <circle 
+            cx="50" 
+            cy="28" 
+            r="9" 
+            fill="currentColor"
+          />
+          
+          {/* Body/torso - filled triangle shape */}
+          <path
+            d="M50 38 L42 58 L58 58 Z"
+            fill="currentColor"
+          />
+          
+          {/* Legs in lotus - filled curves */}
+          <ellipse
+            cx="38"
+            cy="66"
+            rx="14"
+            ry="8"
+            fill="currentColor"
+          />
+          <ellipse
+            cx="62"
+            cy="66"
+            rx="14"
+            ry="8"
+            fill="currentColor"
+          />
+          
+          {/* Highlight lines - arms in meditation */}
+          <path
+            d="M42 46 C36 50 30 56 26 62"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            opacity="0.9"
+          />
+          <path
+            d="M58 46 C64 50 70 56 74 62"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            opacity="0.9"
+          />
+          
+          {/* Aura accent above head */}
+          <path
+            d="M40 16 C45 10 55 10 60 16"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.7"
+          />
+          <path
+            d="M44 10 C48 5 52 5 56 10"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.5"
+          />
+        </g>
       </svg>
       {showText && (
         <span className={cn(
