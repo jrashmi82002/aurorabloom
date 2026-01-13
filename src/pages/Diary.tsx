@@ -102,14 +102,43 @@ const Diary = () => {
 
   // Load entry for selected date
   useEffect(() => {
-    if (!user || entries.length === 0) return;
-    const dateKey = format(selectedDate, "yyyy-MM-dd");
-    const entry = entries.find(e => e.entry_date === dateKey);
-    setCurrentEntry(entry?.content || "");
-    setInsight(entry?.insight || null);
-    setSelectedTheme(entry?.theme || "default");
-    setSelectedSticker(entry?.mood_sticker || null);
-    setImageUrl(entry?.image_url || null);
+    const loadEntry = async () => {
+      if (!user || entries.length === 0) return;
+      const dateKey = format(selectedDate, "yyyy-MM-dd");
+      const entry = entries.find(e => e.entry_date === dateKey);
+      setCurrentEntry(entry?.content || "");
+      setInsight(entry?.insight || null);
+      setSelectedTheme(entry?.theme || "default");
+      setSelectedSticker(entry?.mood_sticker || null);
+      
+      // Fetch signed URL for image if it exists
+      if (entry?.image_url) {
+        try {
+          // Extract file path from the stored URL or reconstruct it
+          const { data: files } = await supabase.storage
+            .from("diary-images")
+            .list(user.id);
+          
+          const imageFile = files?.find(f => f.name.includes(dateKey));
+          if (imageFile) {
+            const { data: signedUrlData } = await supabase.storage
+              .from("diary-images")
+              .createSignedUrl(`${user.id}/${imageFile.name}`, 3600);
+            
+            setImageUrl(signedUrlData?.signedUrl || null);
+          } else {
+            setImageUrl(null);
+          }
+        } catch (error) {
+          console.error("Error fetching signed URL:", error);
+          setImageUrl(null);
+        }
+      } else {
+        setImageUrl(null);
+      }
+    };
+    
+    loadEntry();
   }, [selectedDate, entries, user]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,11 +161,14 @@ const Diary = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      // Use signed URL for private bucket
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from("diary-images")
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 3600); // 1 hour expiry
 
-      setImageUrl(publicUrl);
+      if (signedUrlError) throw signedUrlError;
+
+      setImageUrl(signedUrlData.signedUrl);
       toast({ title: "Image uploaded! 📷" });
     } catch (error: any) {
       console.error("Upload error:", error);
