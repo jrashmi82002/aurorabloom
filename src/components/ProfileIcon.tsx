@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
-import { Crown, MessageCircle, Infinity } from "lucide-react";
+import { Crown, MessageCircle, Infinity, Settings, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { AccountSettings } from "@/components/AccountSettings";
 
 interface ProfileIconProps {
   className?: string;
@@ -17,6 +27,8 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
   const [isPro, setIsPro] = useState(false);
   const [dailyMessageCount, setDailyMessageCount] = useState(0);
   const [dailySessionCount, setDailySessionCount] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUserProfile();
@@ -91,6 +103,11 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
 
   const messagesRemaining = Math.max(0, 200 - dailyMessageCount);
   const sessionsRemaining = Math.max(0, 3 - dailySessionCount);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
 
   return (
     <Popover>
@@ -204,6 +221,32 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
                 </p>
               </div>
             )}
+          </div>
+          
+          <div className="border-t pt-3 space-y-2">
+            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-9">
+                  <Settings className="w-4 h-4" />
+                  Account Settings
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Account Settings</DialogTitle>
+                </DialogHeader>
+                <AccountSettings />
+              </DialogContent>
+            </Dialog>
+            
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-foreground"
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </PopoverContent>
