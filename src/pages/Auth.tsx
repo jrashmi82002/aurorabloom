@@ -108,11 +108,11 @@ const Auth = () => {
 
         toast({
           title: "Account Created",
-          description: "Welcome! We've sent a verification link to your email.",
+          description: "Welcome! You can now sign in to your account.",
         });
         
-        // Automatically sign in the user
-        navigate("/");
+        // Switch to login view
+        resetSignup();
       }
     } catch (error: any) {
       toast({
