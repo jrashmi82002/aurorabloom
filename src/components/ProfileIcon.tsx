@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Crown, MessageCircle, Infinity, Settings, LogOut } from "lucide-react";
+import { Crown, MessageCircle, Infinity, Settings, LogOut, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -224,6 +224,17 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
           </div>
           
           <div className="border-t pt-3 space-y-2">
+            {!isPro && (
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                onClick={() => navigate("/pro-access")}
+              >
+                <Sparkles className="w-4 h-4" />
+                Get Pro Access
+              </Button>
+            )}
+            
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start gap-2 h-9">
