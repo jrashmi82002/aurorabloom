@@ -136,6 +136,7 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           updated_at: string | null
+          username: string | null
         }
         Insert: {
           age_group?: string | null
@@ -153,6 +154,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Update: {
           age_group?: string | null
@@ -170,6 +172,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -319,6 +322,14 @@ export type Database = {
         Returns: boolean
       }
       can_user_start_session: { Args: { user_id_param: string }; Returns: Json }
+      generate_username_suggestion: {
+        Args: { base_name: string }
+        Returns: string
+      }
+      get_user_email_by_username: {
+        Args: { username_param: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

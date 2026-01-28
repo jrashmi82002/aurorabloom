@@ -11,6 +11,7 @@ import Report from "./pages/Report";
 import Activities from "./pages/Activities";
 import Diary from "./pages/Diary";
 import Blog from "./pages/Blog";
+import ProAccess from "./pages/ProAccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/activities" element={<Activities />} />
           <Route path="/diary" element={<Diary />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/pro-access" element={<ProAccess />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

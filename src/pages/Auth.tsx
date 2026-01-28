@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { Logo } from "@/components/Logo";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { User, Mail, RefreshCw } from "lucide-react";
 
 const ageGroups = [
   { value: "under-18", label: "Under 18" },
@@ -27,9 +28,13 @@ const genderOptions = [
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loginMethod, setLoginMethod] = useState<"username" | "email">("username");
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [suggestedUsername, setSuggestedUsername] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
   const [genderIdentity, setGenderIdentity] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,14 +42,82 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Generate username suggestion when full name changes
+  useEffect(() => {
+    if (fullName && !username) {
+      generateUsernameSuggestion(fullName);
+    }
+  }, [fullName]);
+
+  const generateUsernameSuggestion = async (name: string) => {
+    try {
+      const { data, error } = await supabase.rpc('generate_username_suggestion', {
+        base_name: name
+      });
+      if (!error && data) {
+        setSuggestedUsername(data);
+      }
+    } catch (error) {
+      console.error("Error generating username:", error);
+    }
+  };
+
+  const useSuggestedUsername = () => {
+    setUsername(suggestedUsername);
+    // Generate a new suggestion
+    if (fullName) {
+      generateUsernameSuggestion(fullName);
+    }
+  };
+
+  const validateUsername = (value: string) => {
+    // Username must be alphanumeric, 3-20 characters
+    const regex = /^[a-zA-Z0-9_]{3,20}$/;
+    return regex.test(value);
+  };
+
+  const checkUsernameAvailability = async (usernameToCheck: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', usernameToCheck.toLowerCase())
+        .maybeSingle();
+      
+      return !data && !error;
+    } catch {
+      return false;
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isLogin) {
+        let emailToUse = usernameOrEmail;
+        
+        // If using username login, look up the email
+        if (loginMethod === "username") {
+          const { data: userEmail, error } = await supabase.rpc('get_user_email_by_username', {
+            username_param: usernameOrEmail
+          });
+          
+          if (error || !userEmail) {
+            toast({
+              title: "User Not Found",
+              description: "No account found with that username. Please check and try again.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          emailToUse = userEmail;
+        }
+        
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: emailToUse,
           password,
         });
         
@@ -54,10 +127,33 @@ const Auth = () => {
       } else {
         // Validate signup step 1 before proceeding
         if (signupStep === 1) {
-          if (!email || !password || !fullName) {
+          if (!email || !password || !fullName || !username) {
             toast({
               title: "Missing Information",
-              description: "Please fill in all fields",
+              description: "Please fill in all fields including username",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          
+          // Validate username format
+          if (!validateUsername(username)) {
+            toast({
+              title: "Invalid Username",
+              description: "Username must be 3-20 characters, alphanumeric and underscores only",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          
+          // Check username availability
+          const isAvailable = await checkUsernameAvailability(username);
+          if (!isAvailable) {
+            toast({
+              title: "Username Taken",
+              description: "This username is already in use. Please choose another.",
               variant: "destructive",
             });
             setLoading(false);
@@ -87,6 +183,7 @@ const Auth = () => {
           options: {
             data: {
               full_name: fullName,
+              username: username.toLowerCase(),
               age_group: ageGroup,
               gender_identity: genderIdentity,
             },
@@ -96,11 +193,12 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Create profile with demographics
+        // Create profile with username and demographics
         if (data.user) {
           await supabase.from("profiles").upsert({
             id: data.user.id,
             full_name: fullName,
+            username: username.toLowerCase(),
             age_group: ageGroup,
             gender_identity: genderIdentity,
           });
@@ -108,7 +206,7 @@ const Auth = () => {
 
         toast({
           title: "Account Created",
-          description: "Welcome! You can now sign in to your account.",
+          description: `Welcome! Your username is @${username.toLowerCase()}. You can now sign in.`,
         });
         
         // Switch to login view
@@ -128,9 +226,12 @@ const Auth = () => {
   const resetSignup = () => {
     setIsLogin(true);
     setSignupStep(1);
+    setUsernameOrEmail("");
     setEmail("");
     setPassword("");
     setFullName("");
+    setUsername("");
+    setSuggestedUsername("");
     setAgeGroup("");
     setGenderIdentity("");
   };
@@ -147,9 +248,9 @@ const Auth = () => {
           </CardTitle>
           <CardDescription className="text-base">
             {isLogin
-              ? "Continue your path to wellness"
+              ? "Sign in with your username or email"
               : signupStep === 1
-              ? "Start your healing journey with us"
+              ? "Create your unique username to get started"
               : "This helps us personalize your experience"}
           </CardDescription>
         </CardHeader>
@@ -157,14 +258,44 @@ const Auth = () => {
           <form onSubmit={handleAuth} className="space-y-4">
             {isLogin ? (
               <>
+                {/* Login method toggle */}
+                <div className="flex rounded-lg bg-muted p-1 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setLoginMethod("username")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                      loginMethod === "username"
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                    Username
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginMethod("email")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                      loginMethod === "email"
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Mail className="w-4 h-4" />
+                    Email
+                  </button>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="usernameOrEmail">
+                    {loginMethod === "username" ? "Username" : "Email"}
+                  </Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="usernameOrEmail"
+                    type={loginMethod === "email" ? "email" : "text"}
+                    placeholder={loginMethod === "username" ? "your_username" : "you@example.com"}
+                    value={usernameOrEmail}
+                    onChange={(e) => setUsernameOrEmail(e.target.value)}
                     required
                     className="transition-all duration-300 focus:shadow-gentle"
                   />
@@ -196,6 +327,43 @@ const Auth = () => {
                     className="transition-all duration-300 focus:shadow-gentle"
                   />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="choose_a_username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                      required
+                      className="transition-all duration-300 focus:shadow-gentle pr-10"
+                    />
+                    {suggestedUsername && !username && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={useSuggestedUsername}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2"
+                        title="Use suggested username"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Use
+                      </Button>
+                    )}
+                  </div>
+                  {suggestedUsername && !username && (
+                    <p className="text-xs text-muted-foreground">
+                      Suggestion: <span className="font-medium text-primary cursor-pointer hover:underline" onClick={useSuggestedUsername}>@{suggestedUsername}</span>
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    3-20 characters, letters, numbers and underscores only
+                  </p>
+                </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -207,7 +375,11 @@ const Auth = () => {
                     required
                     className="transition-all duration-300 focus:shadow-gentle"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    For account recovery and optional verification
+                  </p>
                 </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <Input
