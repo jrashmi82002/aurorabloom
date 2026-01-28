@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, PanelLeft, HelpCircle } from "lucide-react";
 import { User } from "@supabase/supabase-js";
-import { ProAccessRequest } from "@/components/ProAccessRequest";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -90,7 +89,7 @@ const Home = () => {
                 );
               })}
             </div>
-            <div className="mt-12"><ProAccessRequest /></div>
+            
           </div>
         </main>
       </div>
