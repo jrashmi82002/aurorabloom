@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -314,11 +315,62 @@ serve(async (req) => {
   try {
     const { sessionId, therapyType, messages, isInitial, quizData, messageCount, voiceGender = "female" } = await req.json();
 
+    // For initial greeting, no session validation needed (session may not exist yet)
     if (isInitial) {
       return new Response(
         JSON.stringify({ message: getPersonalizedGreeting(therapyType, voiceGender, quizData) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Validate authentication and session ownership for non-initial requests
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify session ownership (RLS will also enforce this, but we validate explicitly)
+    if (sessionId) {
+      const { data: session, error: sessionError } = await supabaseClient
+        .from('therapy_sessions')
+        .select('user_id, therapy_type')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError || !session) {
+        console.error('Session lookup error:', sessionError);
+        return new Response(
+          JSON.stringify({ error: 'Session not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (session.user_id !== user.id) {
+        console.error('Session ownership mismatch:', { sessionUserId: session.user_id, userId: user.id });
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
