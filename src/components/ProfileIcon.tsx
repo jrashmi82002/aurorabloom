@@ -24,6 +24,7 @@ interface ProfileIconProps {
 
 export const ProfileIcon = ({ className }: ProfileIconProps) => {
   const [initial, setInitial] = useState("U");
+  const [username, setUsername] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [dailyMessageCount, setDailyMessageCount] = useState(0);
   const [dailySessionCount, setDailySessionCount] = useState(0);
@@ -50,6 +51,9 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
             setIsPro(status === "yearly" || status === "monthly");
             setDailyMessageCount((payload.new as any).daily_message_count || 0);
             setDailySessionCount((payload.new as any).daily_session_count || 0);
+            if ((payload.new as any).username) {
+              setUsername((payload.new as any).username);
+            }
           }
         }
       )
@@ -65,22 +69,27 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get initial from email or name
+      // Check pro status and usage
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("pro_subscription_status, daily_message_count, daily_session_count, last_message_date, username, full_name")
+        .eq("id", user.id)
+        .single();
+
+      // Get initial from profile name, username, or email
+      const name = profile?.full_name || user.user_metadata?.full_name || "";
+      const profileUsername = profile?.username || "";
       const email = user.email || "";
-      const name = user.user_metadata?.full_name || "";
       
       if (name) {
         setInitial(name.charAt(0).toUpperCase());
+      } else if (profileUsername) {
+        setInitial(profileUsername.charAt(0).toUpperCase());
       } else if (email) {
         setInitial(email.charAt(0).toUpperCase());
       }
 
-      // Check pro status and usage
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("pro_subscription_status, daily_message_count, daily_session_count, last_message_date")
-        .eq("id", user.id)
-        .single();
+      setUsername(profileUsername);
 
       const status = profile?.pro_subscription_status;
       setIsPro(status === "yearly" || status === "monthly");
@@ -153,6 +162,9 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
               {initial}
             </div>
             <div>
+              {username && (
+                <p className="text-xs text-muted-foreground">@{username}</p>
+              )}
               <p className="font-semibold text-sm">
                 {isPro ? "Pro Member ✨" : "Free Member"}
               </p>
