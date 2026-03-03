@@ -23,7 +23,7 @@ export const Meditation = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const audioContextRef = useRef<AudioContext | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const oscillatorRef = useRef<OscillatorNode | null>(null);
+  const oscillatorsRef = useRef<OscillatorNode[]>([]);
 
   useEffect(() => {
     setTimeRemaining(duration * 60);
@@ -75,7 +75,7 @@ export const Meditation = () => {
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 4);
-      oscillatorRef.current = oscillator;
+      oscillatorsRef.current.push(oscillator);
     } catch (error) {
       console.error("Error playing bell:", error);
     }
@@ -108,8 +108,7 @@ export const Meditation = () => {
       
       oscillator1.start();
       oscillator2.start();
-      
-      oscillatorRef.current = oscillator1;
+      oscillatorsRef.current.push(oscillator1, oscillator2);
       
       // Store references for cleanup
       return () => {
@@ -125,14 +124,10 @@ export const Meditation = () => {
   };
 
   const stopSound = () => {
-    if (oscillatorRef.current) {
-      try {
-        oscillatorRef.current.stop();
-      } catch (e) {
-        // Already stopped
-      }
-      oscillatorRef.current = null;
-    }
+    oscillatorsRef.current.forEach((osc) => {
+      try { osc.stop(); } catch (e) { /* Already stopped */ }
+    });
+    oscillatorsRef.current = [];
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
