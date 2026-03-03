@@ -65,7 +65,7 @@ const Chat = () => {
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
-  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -289,105 +289,79 @@ const Chat = () => {
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
     
-    // Stop any current speech first
-    speechSynthesis.cancel();
+    // Stop any current audio first
+    stopSpeaking();
     setIsSpeaking(true);
     setIsPaused(false);
     
     try {
       const cleanedText = cleanTextForSpeech(text);
-      const utterance = new SpeechSynthesisUtterance(cleanedText);
-      utterance.rate = 0.95;
-      currentUtteranceRef.current = utterance;
       
-      const voices = speechSynthesis.getVoices();
-      let preferredVoice;
-      
-      // Voice configuration based on gender - with proper female voice selection
-      if (voiceGender === "female") {
-        // Set higher pitch for feminine sound
-        utterance.pitch = 1.2;
-        utterance.rate = 0.92;
-        
-        // Prioritize actual female voices - order matters
-        const femaleVoiceNames = [
-          "Samantha", "Karen", "Victoria", "Fiona", "Tessa", "Moira",
-          "Allison", "Susan", "Zira", "Siri", "Google UK English Female",
-          "Microsoft Zira", "Microsoft Eva", "Female", "woman"
-        ];
-        
-        preferredVoice = voices.find(v => 
-          femaleVoiceNames.some(name => v.name.toLowerCase().includes(name.toLowerCase()))
-        );
-        
-        // Secondary: look for any voice with "female" or feminine names
-        if (!preferredVoice) {
-          preferredVoice = voices.find(v => 
-            v.name.toLowerCase().includes("female") ||
-            /\b(ella|emma|alice|sarah|kate|lisa|anna)\b/i.test(v.name)
-          );
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: cleanedText, voiceGender: voiceStyle || voiceGender }),
         }
-      } else {
-        // Male voice configuration
-        utterance.pitch = 0.85;
-        utterance.rate = 0.95;
-        
-        const maleVoiceNames = [
-          "Alex", "Daniel", "Tom", "Fred", "Thomas", "David",
-          "Google UK English Male", "Microsoft David", "Male"
-        ];
-        
-        preferredVoice = voices.find(v => 
-          maleVoiceNames.some(name => v.name.toLowerCase().includes(name.toLowerCase())) &&
-          !v.name.toLowerCase().includes("female")
-        );
+      );
+
+      if (!response.ok) {
+        throw new Error(`TTS request failed: ${response.status}`);
       }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
       
-      // Fallback: prefer any voice that matches gender hint
-      if (!preferredVoice && voiceGender === "female") {
-        preferredVoice = voices.find(v => !v.name.toLowerCase().includes("male")) || voices[0];
-      } else if (!preferredVoice) {
-        preferredVoice = voices[0];
-      }
-      
-      if (preferredVoice) utterance.voice = preferredVoice;
-      utterance.onend = () => {
+      audio.onended = () => {
         setIsSpeaking(false);
         setIsPaused(false);
-        currentUtteranceRef.current = null;
+        audioRef.current = null;
+        URL.revokeObjectURL(audioUrl);
       };
-      utterance.onerror = () => {
+      audio.onerror = () => {
         setIsSpeaking(false);
         setIsPaused(false);
-        currentUtteranceRef.current = null;
+        audioRef.current = null;
+        URL.revokeObjectURL(audioUrl);
       };
-      speechSynthesis.speak(utterance);
+      
+      await audio.play();
     } catch (error) {
-      console.error("Speech error:", error);
+      console.error("TTS error:", error);
       setIsSpeaking(false);
       setIsPaused(false);
     }
   };
 
   const pauseSpeaking = () => {
-    if (speechSynthesis.speaking && !speechSynthesis.paused) {
-      speechSynthesis.pause();
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
       setIsPaused(true);
     }
   };
 
   const resumeSpeaking = () => {
-    if (speechSynthesis.paused) {
-      speechSynthesis.resume();
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play();
       setIsPaused(false);
     }
   };
 
   const stopSpeaking = () => {
-    speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
     setIsSpeaking(false);
     setIsPaused(false);
-    currentUtteranceRef.current = null;
   };
 
   const sendMessage = async () => {
@@ -459,9 +433,14 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Cleanup audio on unmount
   useEffect(() => {
-    speechSynthesis.getVoices();
-    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
   }, []);
 
   const therapistName = getTherapistName(therapyType, voiceGender);
