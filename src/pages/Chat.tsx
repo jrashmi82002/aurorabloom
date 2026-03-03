@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, Volume2, VolumeX, Square, Play, PanelLeftClose, PanelLeft, Pause } from "lucide-react";
+import { Send, Volume2, VolumeX, Square, Play, PanelLeftClose, PanelLeft, Pause, Loader2 } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -29,9 +29,10 @@ const therapyTitles: Record<string, string> = {
   advanced_therapy: "Custom Therapy",
 };
 
-// Therapist names per voice gender
-const getTherapistName = (therapyType: string, voiceGender: "male" | "female") => {
-  return voiceGender === "female" ? "Maya" : "Marcus";
+// Therapist names per voice
+const getTherapistName = (voiceStyle: string, voiceOptions: { value: string; label: string }[]) => {
+  const found = voiceOptions.find(v => v.value === voiceStyle);
+  return found ? found.label.replace(/🇮🇳|🇬🇧/g, '').trim() : "Maya";
 };
 
 // Generate session title based on date/time
@@ -65,21 +66,23 @@ const Chat = () => {
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [isLoadingVoice, setIsLoadingVoice] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Pro voice options - persona names only, no gender labels
+  // Voice options with country-specific names
   const voiceOptions = isPro ? [
-    { value: "female", label: "Maya", gender: "female" },
-    { value: "female-calm", label: "Serena", gender: "female" },
-    { value: "female-warm", label: "Aurora", gender: "female" },
-    { value: "male", label: "Marcus", gender: "male" },
-    { value: "male-deep", label: "David", gender: "male" },
+    { value: "maya", label: "Maya", gender: "female" },
+    { value: "marcus", label: "Marcus", gender: "male" },
+    { value: "priya", label: "Priya 🇮🇳", gender: "female" },
+    { value: "arjun", label: "Arjun 🇮🇳", gender: "male" },
+    { value: "eleanor", label: "Eleanor 🇬🇧", gender: "female" },
+    { value: "james", label: "James 🇬🇧", gender: "male" },
   ] : [
-    { value: "female", label: "Maya", gender: "female" },
-    { value: "male", label: "Marcus", gender: "male" },
+    { value: "maya", label: "Maya", gender: "female" },
+    { value: "marcus", label: "Marcus", gender: "male" },
   ];
 
   useEffect(() => {
@@ -291,6 +294,7 @@ const Chat = () => {
     
     // Stop any current audio first
     stopSpeaking();
+    setIsLoadingVoice(true);
     setIsSpeaking(true);
     setIsPaused(false);
     
@@ -322,21 +326,25 @@ const Chat = () => {
       audio.onended = () => {
         setIsSpeaking(false);
         setIsPaused(false);
+        setIsLoadingVoice(false);
         audioRef.current = null;
         URL.revokeObjectURL(audioUrl);
       };
       audio.onerror = () => {
         setIsSpeaking(false);
         setIsPaused(false);
+        setIsLoadingVoice(false);
         audioRef.current = null;
         URL.revokeObjectURL(audioUrl);
       };
       
       await audio.play();
+      setIsLoadingVoice(false);
     } catch (error) {
       console.error("TTS error:", error);
       setIsSpeaking(false);
       setIsPaused(false);
+      setIsLoadingVoice(false);
     }
   };
 
@@ -443,7 +451,7 @@ const Chat = () => {
     };
   }, []);
 
-  const therapistName = getTherapistName(therapyType, voiceGender);
+  const therapistName = getTherapistName(voiceStyle || voiceGender, voiceOptions);
 
   if (!user) return null;
 
@@ -532,7 +540,17 @@ const Chat = () => {
                     </p>
                     {message.role === "assistant" && voiceEnabled && (
                       <div className="flex gap-2 mt-2">
-                        {isSpeaking ? (
+                        {isLoadingVoice && isSpeaking && !isPaused ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs opacity-60"
+                            disabled
+                          >
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            Loading...
+                          </Button>
+                        ) : isSpeaking ? (
                           <>
                             {isPaused ? (
                               <Button

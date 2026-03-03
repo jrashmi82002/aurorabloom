@@ -5,13 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// Voice mapping: feminine = Sarah, masculine = Daniel
+// Voice mapping for all therapist personas
 const VOICE_MAP: Record<string, string> = {
-  female: "EXAVITQu4vr4xnSDxMaL",       // Sarah - warm feminine
-  "female-calm": "EXAVITQu4vr4xnSDxMaL", // Sarah
-  "female-warm": "EXAVITQu4vr4xnSDxMaL", // Sarah
-  male: "onwK4e9ZLuTAKqWW03F9",           // Daniel - clear masculine
-  "male-deep": "onwK4e9ZLuTAKqWW03F9",   // Daniel
+  maya: "EXAVITQu4vr4xnSDxMaL",        // Sarah - warm feminine (default)
+  marcus: "onwK4e9ZLuTAKqWW03F9",       // Daniel - clear masculine (default)
+  priya: "cgSgspJ2msm6clMCkdW9",        // Jessica - Indian modern feminine
+  arjun: "TX3LPaxmHKxFdv7VOQHJ",        // Liam - Indian masculine
+  eleanor: "Xb7hH8MSUJpSbSDYk0k2",      // Alice - British feminine
+  james: "JBFqnCBsd6RMkjVDRZzb",        // George - British masculine
+  // Legacy fallbacks
+  female: "EXAVITQu4vr4xnSDxMaL",
+  male: "onwK4e9ZLuTAKqWW03F9",
 };
 
 serve(async (req) => {
@@ -34,7 +38,7 @@ serve(async (req) => {
       throw new Error("ELEVENLABS_API_KEY is not configured");
     }
 
-    const voiceId = VOICE_MAP[voiceGender || "female"] || VOICE_MAP.female;
+    const voiceId = VOICE_MAP[voiceGender || "maya"] || VOICE_MAP.maya;
 
     // Truncate to 5000 chars for API limits
     const truncatedText = text.slice(0, 5000);
