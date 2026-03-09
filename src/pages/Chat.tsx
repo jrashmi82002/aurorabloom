@@ -180,6 +180,29 @@ const Chat = () => {
     }
   };
 
+  const initializeQuickSession = async (userId: string) => {
+    try {
+      const { data: session, error } = await supabase
+        .from("therapy_sessions")
+        .insert({
+          user_id: userId,
+          therapy_type: therapyType as any,
+          title: generateSessionTitle(therapyType),
+          has_quiz_completed: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSessionId(session.id);
+      setShowQuiz(false);
+      sendInitialMessage(session.id, null as any);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
   const handleQuizComplete = async (data: QuizData) => {
     setQuizData(data);
     setShowQuiz(false);
