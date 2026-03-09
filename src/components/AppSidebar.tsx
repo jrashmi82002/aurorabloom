@@ -385,6 +385,14 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
             <Newspaper className="w-4 h-4" />
             Healing Blog
           </Button>
+          <Button
+            variant={location.pathname === "/chat" && new URLSearchParams(location.search).get("type") === "krishna_chat" ? "secondary" : "ghost"}
+            className="w-full justify-start gap-2 h-9 text-amber-600 dark:text-amber-400 font-medium"
+            onClick={() => handleNavigate("/chat?type=krishna_chat")}
+          >
+            <Sparkles className="w-4 h-4" />
+            🙏 Talk to Krishna
+          </Button>
           <div className="pt-2 border-t border-border/30 mt-2 space-y-1">
             <Button
               variant="ghost"
