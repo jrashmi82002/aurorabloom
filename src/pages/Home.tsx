@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, PanelLeft, HelpCircle } from "lucide-react";
+import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, PanelLeft, HelpCircle, Sun } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -21,6 +21,7 @@ const therapyTypes = [
   { id: "older_therapy", title: "Senior Therapy", description: "Wisdom-informed support for life's later chapters", icon: Brain, color: "from-amber-400 to-amber-600" },
   { id: "children_therapy", title: "Children's Therapy", description: "Gentle, age-appropriate emotional support", icon: Baby, color: "from-orange-400 to-orange-600" },
   { id: "advanced_therapy", title: "Custom Therapy", description: "Tell us your specific needs and get personalized support", icon: HelpCircle, color: "from-cyan-400 to-teal-600" },
+  { id: "krishna_chat", title: "🙏 Talk to Krishna", description: "A divine conversation with Lord Krishna - surrender your worries, receive eternal wisdom", icon: Sun, color: "from-amber-300 to-yellow-500" },
 ];
 
 const Home = () => {

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, MessageSquare, Clock, FileText, Gamepad2, BookOpen, Newspaper, LogOut, Trash2, Pencil, X, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageSquare, Clock, FileText, Gamepad2, BookOpen, Newspaper, LogOut, Trash2, Pencil, X, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isThisMonth, isThisYear } from "date-fns";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -36,6 +36,7 @@ const therapyLabels: Record<string, string> = {
   older_therapy: "Senior",
   children_therapy: "Kids",
   advanced_therapy: "Custom",
+  krishna_chat: "Krishna",
 };
 
 // Generate creative session names
@@ -383,6 +384,14 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
           >
             <Newspaper className="w-4 h-4" />
             Healing Blog
+          </Button>
+          <Button
+            variant={location.pathname === "/chat" && new URLSearchParams(location.search).get("type") === "krishna_chat" ? "secondary" : "ghost"}
+            className="w-full justify-start gap-2 h-9 text-amber-600 dark:text-amber-400 font-medium"
+            onClick={() => handleNavigate("/chat?type=krishna_chat")}
+          >
+            <Sparkles className="w-4 h-4" />
+            🙏 Talk to Krishna
           </Button>
           <div className="pt-2 border-t border-border/30 mt-2 space-y-1">
             <Button

@@ -27,6 +27,7 @@ const therapyTitles: Record<string, string> = {
   older_therapy: "Senior Therapy",
   children_therapy: "Children's Therapy",
   advanced_therapy: "Custom Therapy",
+  krishna_chat: "Talk to Krishna",
 };
 
 // Therapist names per voice
@@ -48,7 +49,7 @@ const Chat = () => {
   const therapyType = (searchParams.get("type") || "talk_therapy") as 
     "yogic" | "psychological" | "physiotherapy" | "ayurveda" | "talk_therapy" | 
     "female_therapy" | "male_therapy" | "older_therapy" | 
-    "children_therapy" | "advanced_therapy";
+    "children_therapy" | "advanced_therapy" | "krishna_chat";
   const existingSessionId = searchParams.get("session");
   
   const [user, setUser] = useState<User | null>(null);
@@ -67,6 +68,7 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [isLoadingVoice, setIsLoadingVoice] = useState(false);
+  const [userName, setUserName] = useState<string>("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -115,12 +117,15 @@ const Chat = () => {
   const checkExistingProfile = async (userId: string) => {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("age_group, gender_identity")
+      .select("age_group, gender_identity, full_name, username")
       .eq("id", userId)
       .single();
 
     if (profile?.age_group && profile?.gender_identity) {
       setHasExistingProfile(true);
+    }
+    if (profile?.full_name || profile?.username) {
+      setUserName(profile.full_name || profile.username || "");
     }
   };
 
@@ -247,6 +252,7 @@ const Chat = () => {
           hasPreviousSessions: previousSessions && previousSessions.length > 0,
           messageCount: 0,
           voiceGender,
+          userName,
         },
       });
 
@@ -400,6 +406,7 @@ const Chat = () => {
           quizData,
           messageCount: messages.length + 1,
           voiceGender,
+          userName,
         },
       });
 
