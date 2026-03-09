@@ -36,6 +36,7 @@ const therapyLabels: Record<string, string> = {
   older_therapy: "Senior",
   children_therapy: "Kids",
   advanced_therapy: "Custom",
+  krishna_chat: "Krishna",
 };
 
 // Generate creative session names
