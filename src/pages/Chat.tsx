@@ -51,6 +51,7 @@ const Chat = () => {
     "female_therapy" | "male_therapy" | "older_therapy" | 
     "children_therapy" | "advanced_therapy" | "krishna_chat";
   const existingSessionId = searchParams.get("session");
+  const skipQuizParam = searchParams.get("skipQuiz") === "true" || therapyType === "krishna_chat";
   
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
