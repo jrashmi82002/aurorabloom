@@ -49,7 +49,7 @@ const Chat = () => {
   const therapyType = (searchParams.get("type") || "talk_therapy") as 
     "yogic" | "psychological" | "physiotherapy" | "ayurveda" | "talk_therapy" | 
     "female_therapy" | "male_therapy" | "older_therapy" | 
-    "children_therapy" | "advanced_therapy";
+    "children_therapy" | "advanced_therapy" | "krishna_chat";
   const existingSessionId = searchParams.get("session");
   
   const [user, setUser] = useState<User | null>(null);

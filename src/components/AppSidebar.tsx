@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, MessageSquare, Clock, FileText, Gamepad2, BookOpen, Newspaper, LogOut, Trash2, Pencil, X, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageSquare, Clock, FileText, Gamepad2, BookOpen, Newspaper, LogOut, Trash2, Pencil, X, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isThisMonth, isThisYear } from "date-fns";
 import { useNavigate, useLocation } from "react-router-dom";
