@@ -406,6 +406,7 @@ const Chat = () => {
           quizData,
           messageCount: messages.length + 1,
           voiceGender,
+          userName,
         },
       });
 
