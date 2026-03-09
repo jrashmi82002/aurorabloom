@@ -198,9 +198,82 @@ const Chat = () => {
 
       setSessionId(session.id);
       setShowQuiz(false);
-      sendInitialMessage(session.id, null as any);
+      
+      // Get initial greeting
+      const { data: greetingData, error: greetingError } = await supabase.functions.invoke("therapy-chat", {
+        body: {
+          sessionId: session.id,
+          therapyType,
+          isInitial: true,
+          quizData: null,
+          messageCount: 0,
+          voiceGender,
+          userName,
+        },
+      });
+
+      if (greetingError) throw greetingError;
+
+      const greeting: Message = { role: "assistant", content: greetingData.message };
+      setMessages([greeting]);
+
+      await supabase.from("therapy_messages").insert({
+        session_id: session.id,
+        role: "assistant",
+        content: greetingData.message,
+      });
+
+      if (voiceEnabled) {
+        speakText(greetingData.message);
+      }
+
+      // If there's a firstMessage from the quick input, auto-send it
+      if (firstMessageParam) {
+        const userMsg: Message = { role: "user", content: firstMessageParam };
+        setMessages(prev => [...prev, userMsg]);
+        setLoading(true);
+
+        await supabase.from("therapy_messages").insert({
+          session_id: session.id,
+          role: "user",
+          content: firstMessageParam,
+        });
+
+        const { data: replyData, error: replyError } = await supabase.functions.invoke("therapy-chat", {
+          body: {
+            sessionId: session.id,
+            therapyType,
+            messages: [greeting, userMsg],
+            quizData: null,
+            messageCount: 2,
+            voiceGender,
+            userName,
+          },
+        });
+
+        if (replyError) throw replyError;
+
+        const assistantReply: Message = { role: "assistant", content: replyData.message };
+        setMessages(prev => [...prev, assistantReply]);
+
+        await supabase.from("therapy_messages").insert({
+          session_id: session.id,
+          role: "assistant",
+          content: replyData.message,
+        });
+
+        await supabase.from("therapy_sessions")
+          .update({ message_count: 3 })
+          .eq("id", session.id);
+
+        if (voiceEnabled) {
+          speakText(replyData.message);
+        }
+        setLoading(false);
+      }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      setLoading(false);
     }
   };
 
