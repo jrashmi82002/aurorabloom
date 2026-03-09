@@ -252,6 +252,7 @@ const Chat = () => {
           hasPreviousSessions: previousSessions && previousSessions.length > 0,
           messageCount: 0,
           voiceGender,
+          userName,
         },
       });
 
