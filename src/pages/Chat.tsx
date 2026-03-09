@@ -117,12 +117,15 @@ const Chat = () => {
   const checkExistingProfile = async (userId: string) => {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("age_group, gender_identity")
+      .select("age_group, gender_identity, full_name, username")
       .eq("id", userId)
       .single();
 
     if (profile?.age_group && profile?.gender_identity) {
       setHasExistingProfile(true);
+    }
+    if (profile?.full_name || profile?.username) {
+      setUserName(profile.full_name || profile.username || "");
     }
   };
 
