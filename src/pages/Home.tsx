@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, PanelLeft, HelpCircle } from "lucide-react";
+import { Leaf, Sparkles, Activity, FlowerIcon, MessageCircle, Users, Brain, Baby, PanelLeft, HelpCircle, Sun } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
