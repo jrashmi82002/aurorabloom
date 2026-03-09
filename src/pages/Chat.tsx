@@ -27,6 +27,7 @@ const therapyTitles: Record<string, string> = {
   older_therapy: "Senior Therapy",
   children_therapy: "Children's Therapy",
   advanced_therapy: "Custom Therapy",
+  krishna_chat: "Talk to Krishna",
 };
 
 // Therapist names per voice
