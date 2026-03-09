@@ -51,13 +51,15 @@ const Chat = () => {
     "female_therapy" | "male_therapy" | "older_therapy" | 
     "children_therapy" | "advanced_therapy" | "krishna_chat";
   const existingSessionId = searchParams.get("session");
+  const skipQuizParam = searchParams.get("skipQuiz") === "true" || therapyType === "krishna_chat";
+  const firstMessageParam = searchParams.get("firstMessage");
   
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [showQuiz, setShowQuiz] = useState(true);
+  const [showQuiz, setShowQuiz] = useState(!skipQuizParam);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
@@ -96,9 +98,11 @@ const Chat = () => {
         checkExistingProfile(session.user.id);
         checkProStatus(session.user.id);
         
-        // If there's an existing session ID in URL, load it
         if (existingSessionId) {
           loadExistingSession(existingSessionId);
+        } else if (skipQuizParam) {
+          // Auto-initialize session without quiz
+          initializeQuickSession(session.user.id);
         }
       }
     });
@@ -174,6 +178,102 @@ const Chat = () => {
         variant: "destructive",
       });
       return null;
+    }
+  };
+
+  const initializeQuickSession = async (userId: string) => {
+    try {
+      const { data: session, error } = await supabase
+        .from("therapy_sessions")
+        .insert({
+          user_id: userId,
+          therapy_type: therapyType as any,
+          title: generateSessionTitle(therapyType),
+          has_quiz_completed: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSessionId(session.id);
+      setShowQuiz(false);
+      
+      // Get initial greeting
+      const { data: greetingData, error: greetingError } = await supabase.functions.invoke("therapy-chat", {
+        body: {
+          sessionId: session.id,
+          therapyType,
+          isInitial: true,
+          quizData: null,
+          messageCount: 0,
+          voiceGender,
+          userName,
+        },
+      });
+
+      if (greetingError) throw greetingError;
+
+      const greeting: Message = { role: "assistant", content: greetingData.message };
+      setMessages([greeting]);
+
+      await supabase.from("therapy_messages").insert({
+        session_id: session.id,
+        role: "assistant",
+        content: greetingData.message,
+      });
+
+      if (voiceEnabled) {
+        speakText(greetingData.message);
+      }
+
+      // If there's a firstMessage from the quick input, auto-send it
+      if (firstMessageParam) {
+        const userMsg: Message = { role: "user", content: firstMessageParam };
+        setMessages(prev => [...prev, userMsg]);
+        setLoading(true);
+
+        await supabase.from("therapy_messages").insert({
+          session_id: session.id,
+          role: "user",
+          content: firstMessageParam,
+        });
+
+        const { data: replyData, error: replyError } = await supabase.functions.invoke("therapy-chat", {
+          body: {
+            sessionId: session.id,
+            therapyType,
+            messages: [greeting, userMsg],
+            quizData: null,
+            messageCount: 2,
+            voiceGender,
+            userName,
+          },
+        });
+
+        if (replyError) throw replyError;
+
+        const assistantReply: Message = { role: "assistant", content: replyData.message };
+        setMessages(prev => [...prev, assistantReply]);
+
+        await supabase.from("therapy_messages").insert({
+          session_id: session.id,
+          role: "assistant",
+          content: replyData.message,
+        });
+
+        await supabase.from("therapy_sessions")
+          .update({ message_count: 3 })
+          .eq("id", session.id);
+
+        if (voiceEnabled) {
+          speakText(replyData.message);
+        }
+        setLoading(false);
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setLoading(false);
     }
   };
 
