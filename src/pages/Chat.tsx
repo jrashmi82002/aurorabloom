@@ -97,9 +97,11 @@ const Chat = () => {
         checkExistingProfile(session.user.id);
         checkProStatus(session.user.id);
         
-        // If there's an existing session ID in URL, load it
         if (existingSessionId) {
           loadExistingSession(existingSessionId);
+        } else if (skipQuizParam) {
+          // Auto-initialize session without quiz
+          initializeQuickSession(session.user.id);
         }
       }
     });
