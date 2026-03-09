@@ -68,6 +68,7 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [isLoadingVoice, setIsLoadingVoice] = useState(false);
+  const [userName, setUserName] = useState<string>("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
