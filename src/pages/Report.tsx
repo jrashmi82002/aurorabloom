@@ -22,6 +22,8 @@ interface MonthlyStats {
   actionItems: string[];
   funnyNote: string;
   journeyImage: string;
+  characterMatch: string;
+  personaInsight: string;
 }
 
 const therapyLabels: Record<string, string> = {
