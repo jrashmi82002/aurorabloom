@@ -25,10 +25,14 @@ const therapyTypes = [
   { id: "krishna_chat", title: "🙏 Talk to Krishna", description: "A divine conversation with Lord Krishna - surrender your worries, receive eternal wisdom", icon: Sun, color: "from-amber-300 to-yellow-500" },
 ];
 
+const heroText = "How are you feeling?";
+
 const Home = () => {
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [quickInput, setQuickInput] = useState("");
+  const [displayedText, setDisplayedText] = useState("");
+  const [typingDone, setTypingDone] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,11 +49,27 @@ const Home = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Typewriter effect
+  useEffect(() => {
+    let i = 0;
+    setDisplayedText("");
+    setTypingDone(false);
+    const interval = setInterval(() => {
+      if (i < heroText.length) {
+        setDisplayedText(heroText.slice(0, i + 1));
+        i++;
+      } else {
+        setTypingDone(true);
+        clearInterval(interval);
+      }
+    }, 80);
+    return () => clearInterval(interval);
+  }, []);
+
   const startSession = (therapyType: string) => navigate(`/chat?type=${therapyType}`);
 
   const handleQuickChat = () => {
     if (!quickInput.trim()) return;
-    // Navigate to talk_therapy with skipQuiz and pass first message via state
     navigate(`/chat?type=talk_therapy&skipQuiz=true&firstMessage=${encodeURIComponent(quickInput.trim())}`);
   };
 
@@ -78,16 +98,24 @@ const Home = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto relative">
+          {/* Calming background animations */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/4 -left-20 w-72 h-72 rounded-full bg-primary/5 blur-3xl animate-float-slow" />
+            <div className="absolute bottom-1/3 -right-16 w-64 h-64 rounded-full bg-accent/8 blur-3xl animate-float-slow-reverse" />
+            <div className="absolute top-2/3 left-1/3 w-48 h-48 rounded-full bg-primary/3 blur-2xl animate-float-gentle" />
+          </div>
+
           {/* Hero section with quick chat */}
           <div className="min-h-[calc(100vh-73px)] flex flex-col items-center justify-center px-6 relative">
             <div className="max-w-2xl w-full text-center space-y-8">
               <div className="space-y-3">
                 <h1 className="text-4xl md:text-5xl font-serif font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  How are you feeling?
+                  {displayedText}
+                  {!typingDone && <span className="animate-pulse ml-0.5 text-primary">|</span>}
                 </h1>
                 <p className="text-muted-foreground text-lg">
-                  Just start typing — no forms, no waiting. Your therapist is here.
+                  Just start typing — no judgements, no waiting. Your therapist is here.
                 </p>
               </div>
 
