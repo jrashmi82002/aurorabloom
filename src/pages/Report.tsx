@@ -303,6 +303,78 @@ const Report = () => {
     return funnyNotes[Math.floor(Math.random() * funnyNotes.length)];
   };
 
+  const generateCharacterMatch = (
+    mood: string, avgMood: number, avgStress: number,
+    typeCounts: Record<string, number>, sessions: number
+  ): string => {
+    const characters = [
+      { name: "Naruto Uzumaki", traits: "resilient, never gives up, warm-hearted", condition: () => mood === "improving" && sessions >= 5 },
+      { name: "Tanjiro Kamado", traits: "compassionate, brave, gentle yet strong", condition: () => avgMood >= 6 && avgStress <= 5 },
+      { name: "Hermione Granger", traits: "intellectual, dedicated, values self-improvement", condition: () => sessions >= 8 },
+      { name: "Atticus Finch", traits: "wise, empathetic, principled", condition: () => typeCounts["talk_therapy"] >= 3 },
+      { name: "Arjuna (Mahabharata)", traits: "focused, dutiful, seeking truth through guidance", condition: () => typeCounts["yogic"] >= 2 || typeCounts["krishna_chat"] >= 1 },
+      { name: "Luna Lovegood", traits: "unique, open-minded, comfortable with emotions", condition: () => Object.keys(typeCounts).length >= 3 },
+      { name: "Monkey D. Luffy", traits: "optimistic, adventurous, values connections", condition: () => mood === "improving" },
+      { name: "Elizabeth Bennet", traits: "sharp, independent, growing through self-reflection", condition: () => avgMood >= 5 },
+      { name: "Goku", traits: "persistent, always pushing limits, pure-hearted", condition: () => sessions >= 10 },
+      { name: "Totoro", traits: "gentle, calming presence, nurturing", condition: () => avgStress <= 4 },
+    ];
+
+    const match = characters.find(c => c.condition()) || characters[7];
+    return `🌟 **${match.name}** — You share their essence: ${match.traits}. Like ${match.name.split(" ")[0]}, your journey this month shows a beautiful blend of strength and vulnerability. Keep walking this path — your character arc is inspiring! ✨`;
+  };
+
+  const generatePersonaInsight = (
+    sessions: number, messages: number, avgMood: number, avgStress: number,
+    mood: string, typeCounts: Record<string, number>, goals: string[]
+  ): string => {
+    let insight = "";
+    
+    // Personality type
+    if (avgMood >= 7 && avgStress <= 4) {
+      insight += "You carry a natural lightness within you — the kind of person who finds silver linings even on cloudy days. ";
+    } else if (avgMood >= 5) {
+      insight += "You're the thoughtful type — someone who processes deeply, feels authentically, and doesn't rush through emotions. ";
+    } else {
+      insight += "You're going through a chrysalis moment — the kind of transformation that requires darkness before the butterfly emerges. ";
+    }
+
+    // Communication style
+    if (messages > 100) {
+      insight += "You express yourself openly and freely, and that's a superpower. Your willingness to articulate feelings shows emotional intelligence that many aspire to. ";
+    } else if (messages > 30) {
+      insight += "You choose your words thoughtfully — each conversation you have carries weight and intention. ";
+    } else {
+      insight += "You're learning to open up, and every word you share is a step toward deeper self-understanding. ";
+    }
+
+    // Therapy preferences
+    const types = Object.keys(typeCounts);
+    if (types.length >= 3) {
+      insight += "Your curiosity spans multiple healing modalities, suggesting you're an explorer at heart — never settling for just one perspective. ";
+    } else if (types.includes("yogic") || types.includes("ayurveda")) {
+      insight += "Your connection to ancient wisdom traditions reveals a soul that seeks meaning beyond the surface. ";
+    }
+
+    // Stress response
+    if (avgStress >= 7) {
+      insight += "You carry more weight than most, yet you keep showing up. That resilience is not ordinary — it's extraordinary. The fact that you seek help is the bravest thing you do. ";
+    } else if (avgStress >= 4) {
+      insight += "You navigate life's pressures with a balanced approach, knowing when to push and when to rest. ";
+    }
+
+    // Growth trajectory
+    if (mood === "improving") {
+      insight += "Most importantly, you're on an upward trajectory. Like a river finding its way to the ocean, you're flowing toward your truest self. 🌊";
+    } else if (mood === "steady") {
+      insight += "Your stability is not stagnation — it's the foundation upon which lasting change is built. Think of it as roots growing deeper before the tree grows taller. 🌳";
+    } else {
+      insight += "Remember: the lotus grows from the mud. Your current challenges are the soil from which your most beautiful growth will emerge. 🪷";
+    }
+
+    return insight;
+  };
+
   const handlePreviousMonth = () => {
     setSelectedMonth((prev) => subMonths(prev, 1));
   };
