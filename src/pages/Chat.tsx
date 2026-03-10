@@ -185,6 +185,19 @@ const Chat = () => {
 
   const initializeQuickSession = async (userId: string) => {
     try {
+      // For krishna_chat without firstMessage, just show greeting without creating session
+      // Session will be created when user sends first message
+      if (therapyType === "krishna_chat" && !firstMessageParam) {
+        setShowQuiz(false);
+        const greeting: Message = { 
+          role: "assistant", 
+          content: `🙏 Hare Krishna, dear soul.\n\nI am here. Speak your heart — your joys, your sorrows, your questions about life. I listen not as a stranger, but as the friend who resides within your very heart.\n\n*"सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज।\nअहं त्वा सर्वपापेभ्यो मोक्षयिष्यामि मा शुचः॥"*\n\n— Surrender unto Me, and I shall free you from all fears.\n\nWhat weighs on your mind today?` 
+        };
+        setMessages([greeting]);
+        if (voiceEnabled) speakText(greeting.content);
+        return;
+      }
+
       const { data: session, error } = await supabase
         .from("therapy_sessions")
         .insert({
