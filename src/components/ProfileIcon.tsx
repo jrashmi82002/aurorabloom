@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Crown, MessageCircle, Infinity, Settings, LogOut, Sparkles } from "lucide-react";
+import { Crown, MessageCircle, Infinity, Settings, LogOut, Sparkles, BookHeart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AccountSettings } from "@/components/AccountSettings";
+import { MyPersona } from "@/components/MyPersona";
 
 interface ProfileIconProps {
   className?: string;
@@ -29,21 +30,17 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
   const [dailyMessageCount, setDailyMessageCount] = useState(0);
   const [dailySessionCount, setDailySessionCount] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [personaOpen, setPersonaOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchUserProfile();
 
-    // Subscribe to profile changes
     const channel = supabase
       .channel("profile-status")
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "profiles",
-        },
+        { event: "UPDATE", schema: "public", table: "profiles" },
         async (payload) => {
           const { data: { user } } = await supabase.auth.getUser();
           if (user && (payload.new as any).id === user.id) {
@@ -59,9 +56,7 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchUserProfile = async () => {
@@ -69,32 +64,24 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Check pro status and usage
       const { data: profile } = await supabase
         .from("profiles")
         .select("pro_subscription_status, daily_message_count, daily_session_count, last_message_date, username, full_name")
         .eq("id", user.id)
         .single();
 
-      // Get initial from profile name, username, or email
       const name = profile?.full_name || user.user_metadata?.full_name || "";
       const profileUsername = profile?.username || "";
       const email = user.email || "";
       
-      if (name) {
-        setInitial(name.charAt(0).toUpperCase());
-      } else if (profileUsername) {
-        setInitial(profileUsername.charAt(0).toUpperCase());
-      } else if (email) {
-        setInitial(email.charAt(0).toUpperCase());
-      }
+      if (name) setInitial(name.charAt(0).toUpperCase());
+      else if (profileUsername) setInitial(profileUsername.charAt(0).toUpperCase());
+      else if (email) setInitial(email.charAt(0).toUpperCase());
 
       setUsername(profileUsername);
-
       const status = profile?.pro_subscription_status;
       setIsPro(status === "yearly" || status === "monthly");
       
-      // Reset counts if new day
       const today = new Date().toISOString().split('T')[0];
       const lastMessageDate = profile?.last_message_date;
       
@@ -122,12 +109,9 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
     <Popover>
       <PopoverTrigger asChild>
         <button className={cn("relative focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full", className)}>
-          {/* Pro halo effect */}
           {isPro && (
             <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 animate-pulse opacity-75 blur-sm" />
           )}
-          
-          {/* Profile circle */}
           <div
             className={cn(
               "relative w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm transition-transform hover:scale-105",
@@ -138,8 +122,6 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
           >
             {initial}
           </div>
-          
-          {/* Crown for pro users */}
           {isPro && (
             <div className="absolute -top-2 left-1/2 -translate-x-1/2">
               <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -148,12 +130,12 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
         </button>
       </PopoverTrigger>
       
-      <PopoverContent className="w-64 p-4" align="end">
-        <div className="space-y-3">
+      <PopoverContent className="w-64 p-3" align="end">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div
               className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg",
+                "w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm",
                 isPro
                   ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white"
                   : "bg-gradient-to-br from-primary/80 to-primary text-primary-foreground"
@@ -162,101 +144,97 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
               {initial}
             </div>
             <div>
-              {username && (
-                <p className="text-xs text-muted-foreground">@{username}</p>
-              )}
-              <p className="font-semibold text-sm">
+              {username && <p className="text-xs text-muted-foreground">@{username}</p>}
+              <p className="font-semibold text-xs">
                 {isPro ? "Pro Member ✨" : "Free Member"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {isPro ? "Unlimited access" : "Limited credits"}
               </p>
             </div>
           </div>
           
-          <div className="border-t pt-3 space-y-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Daily Credits
-            </h4>
-            
+          <div className="border-t pt-2 space-y-1.5">
+            <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Credits</h4>
             {isPro ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10">
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-emerald-600" />
-                    <span className="text-sm">Messages</span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between p-1.5 rounded bg-emerald-500/10 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <MessageCircle className="w-3 h-3 text-emerald-600" />
+                    <span>Messages</span>
                   </div>
-                  <div className="flex items-center gap-1 text-emerald-600 font-semibold">
-                    <Infinity className="w-4 h-4" />
-                    <span className="text-sm">Unlimited</span>
+                  <div className="flex items-center gap-0.5 text-emerald-600 font-semibold">
+                    <Infinity className="w-3 h-3" />
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10">
-                  <div className="flex items-center gap-2">
-                    <Crown className="w-4 h-4 text-emerald-600" />
-                    <span className="text-sm">Sessions</span>
+                <div className="flex items-center justify-between p-1.5 rounded bg-emerald-500/10 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Crown className="w-3 h-3 text-emerald-600" />
+                    <span>Sessions</span>
                   </div>
-                  <div className="flex items-center gap-1 text-emerald-600 font-semibold">
-                    <Infinity className="w-4 h-4" />
-                    <span className="text-sm">Unlimited</span>
+                  <div className="flex items-center gap-0.5 text-emerald-600 font-semibold">
+                    <Infinity className="w-3 h-3" />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Messages</span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between p-1.5 rounded bg-muted/50 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <MessageCircle className="w-3 h-3 text-muted-foreground" />
+                    <span>Messages</span>
                   </div>
-                  <span className={cn(
-                    "text-sm font-semibold",
-                    messagesRemaining < 50 ? "text-orange-500" : "text-foreground"
-                  )}>
+                  <span className={cn("font-semibold", messagesRemaining < 50 ? "text-orange-500" : "")}>
                     {messagesRemaining}/200
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <Crown className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Sessions</span>
+                <div className="flex items-center justify-between p-1.5 rounded bg-muted/50 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Crown className="w-3 h-3 text-muted-foreground" />
+                    <span>Sessions</span>
                   </div>
-                  <span className={cn(
-                    "text-sm font-semibold",
-                    sessionsRemaining === 0 ? "text-red-500" : "text-foreground"
-                  )}>
+                  <span className={cn("font-semibold", sessionsRemaining === 0 ? "text-red-500" : "")}>
                     {sessionsRemaining}/3
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground text-center pt-1">
-                  Upgrade to Pro for unlimited access
-                </p>
               </div>
             )}
           </div>
           
-          <div className="border-t pt-3 space-y-2">
+          <div className="border-t pt-2 space-y-0.5">
             {!isPro && (
               <Button 
                 variant="ghost" 
-                className="w-full justify-start gap-2 h-9 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                className="w-full justify-start gap-2 h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
                 onClick={() => navigate("/pro-access")}
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-3.5 h-3.5" />
                 Get Pro Access
               </Button>
             )}
+
+            <Dialog open={personaOpen} onOpenChange={setPersonaOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-8 text-xs">
+                  <BookHeart className="w-3.5 h-3.5" />
+                  My Persona
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="font-serif">My Persona</DialogTitle>
+                </DialogHeader>
+                <MyPersona />
+              </DialogContent>
+            </Dialog>
             
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2 h-9">
-                  <Settings className="w-4 h-4" />
+                <Button variant="ghost" className="w-full justify-start gap-2 h-8 text-xs">
+                  <Settings className="w-3.5 h-3.5" />
                   Account Settings
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-sm">
                 <DialogHeader>
-                  <DialogTitle>Account Settings</DialogTitle>
+                  <DialogTitle className="text-base">Account Settings</DialogTitle>
                 </DialogHeader>
                 <AccountSettings />
               </DialogContent>
@@ -264,10 +242,10 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
             
             <Button 
               variant="ghost" 
-              className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-foreground"
+              className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground"
               onClick={handleSignOut}
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
               Sign Out
             </Button>
           </div>
