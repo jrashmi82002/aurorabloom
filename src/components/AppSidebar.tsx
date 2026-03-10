@@ -149,6 +149,9 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
   const groupSessionsByMonth = (): GroupedSessions => {
     const grouped: GroupedSessions = {};
     sessions.forEach((session) => {
+      // Only show sessions that have user messages (message_count > 0 or have messages beyond greeting)
+      if (session.message_count !== null && session.message_count <= 1 && session.therapy_type === "krishna_chat") return;
+      
       const date = new Date(session.started_at);
       const monthKey = format(date, "yyyy-MM");
       
