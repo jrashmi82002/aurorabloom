@@ -151,6 +151,10 @@ const Report = () => {
         // Generate action items
         const actionItems = generateActionItems(moodTrend, avgStress, topGoals, therapyTypeCounts);
 
+        // Generate character match and persona insight
+        const characterMatch = generateCharacterMatch(moodTrend, avgMood, avgStress, therapyTypeCounts, sessions.length);
+        const personaInsight = generatePersonaInsight(sessions.length, totalMessages, avgMood, avgStress, moodTrend, therapyTypeCounts, topGoals);
+
         setStats({
           totalSessions: sessions.length,
           totalMessages,
@@ -164,6 +168,8 @@ const Report = () => {
           actionItems,
           funnyNote: generateFunnyNote(sessions.length, moodTrend),
           journeyImage: journeyImages[moodTrend] || journeyImages.default,
+          characterMatch,
+          personaInsight,
         });
       } else {
         setStats(null);
