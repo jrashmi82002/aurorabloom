@@ -76,18 +76,20 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Voice options with country-specific names
-  const voiceOptions = isPro ? [
-    { value: "maya", label: "Maya", gender: "female" },
-    { value: "marcus", label: "Marcus", gender: "male" },
-    { value: "priya", label: "Priya 🇮🇳", gender: "female" },
-    { value: "arjun", label: "Arjun 🇮🇳", gender: "male" },
-    { value: "eleanor", label: "Eleanor 🇬🇧", gender: "female" },
-    { value: "james", label: "James 🇬🇧", gender: "male" },
-  ] : [
-    { value: "maya", label: "Maya", gender: "female" },
-    { value: "marcus", label: "Marcus", gender: "male" },
-  ];
+  // Voice options - Krishna chat gets only Krishna voice
+  const voiceOptions = therapyType === "krishna_chat" 
+    ? [{ value: "krishna", label: "Krishna", gender: "male" }]
+    : isPro ? [
+      { value: "maya", label: "Maya", gender: "female" },
+      { value: "marcus", label: "Marcus", gender: "male" },
+      { value: "priya", label: "Priya 🇮🇳", gender: "female" },
+      { value: "arjun", label: "Arjun 🇮🇳", gender: "male" },
+      { value: "eleanor", label: "Eleanor 🇬🇧", gender: "female" },
+      { value: "james", label: "James 🇬🇧", gender: "male" },
+    ] : [
+      { value: "maya", label: "Maya", gender: "female" },
+      { value: "marcus", label: "Marcus", gender: "male" },
+    ];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
