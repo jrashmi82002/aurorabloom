@@ -19,7 +19,7 @@ export const MyPersona = () => {
       // Gather all user data
       const [profileRes, sessionsRes, diaryRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase.from("therapy_sessions").select("therapy_type, message_count, started_at").eq("user_id", user.id).order("started_at", { ascending: false }).limit(50),
+        supabase.from("therapy_sessions").select("id, therapy_type, message_count, started_at").eq("user_id", user.id).order("started_at", { ascending: false }).limit(50),
         supabase.from("diary_entries").select("content, mood_sticker, theme, entry_date").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(20),
       ]);
 
