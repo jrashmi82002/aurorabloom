@@ -76,18 +76,20 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Voice options with country-specific names
-  const voiceOptions = isPro ? [
-    { value: "maya", label: "Maya", gender: "female" },
-    { value: "marcus", label: "Marcus", gender: "male" },
-    { value: "priya", label: "Priya 🇮🇳", gender: "female" },
-    { value: "arjun", label: "Arjun 🇮🇳", gender: "male" },
-    { value: "eleanor", label: "Eleanor 🇬🇧", gender: "female" },
-    { value: "james", label: "James 🇬🇧", gender: "male" },
-  ] : [
-    { value: "maya", label: "Maya", gender: "female" },
-    { value: "marcus", label: "Marcus", gender: "male" },
-  ];
+  // Voice options - Krishna chat gets only Krishna voice
+  const voiceOptions = therapyType === "krishna_chat" 
+    ? [{ value: "krishna", label: "Krishna", gender: "male" }]
+    : isPro ? [
+      { value: "maya", label: "Maya", gender: "female" },
+      { value: "marcus", label: "Marcus", gender: "male" },
+      { value: "priya", label: "Priya 🇮🇳", gender: "female" },
+      { value: "arjun", label: "Arjun 🇮🇳", gender: "male" },
+      { value: "eleanor", label: "Eleanor 🇬🇧", gender: "female" },
+      { value: "james", label: "James 🇬🇧", gender: "male" },
+    ] : [
+      { value: "maya", label: "Maya", gender: "female" },
+      { value: "marcus", label: "Marcus", gender: "male" },
+    ];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -183,6 +185,19 @@ const Chat = () => {
 
   const initializeQuickSession = async (userId: string) => {
     try {
+      // For krishna_chat without firstMessage, just show greeting without creating session
+      // Session will be created when user sends first message
+      if (therapyType === "krishna_chat" && !firstMessageParam) {
+        setShowQuiz(false);
+        const greeting: Message = { 
+          role: "assistant", 
+          content: `🙏 Hare Krishna, dear soul.\n\nI am here. Speak your heart — your joys, your sorrows, your questions about life. I listen not as a stranger, but as the friend who resides within your very heart.\n\n*"सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज।\nअहं त्वा सर्वपापेभ्यो मोक्षयिष्यामि मा शुचः॥"*\n\n— Surrender unto Me, and I shall free you from all fears.\n\nWhat weighs on your mind today?` 
+        };
+        setMessages([greeting]);
+        if (voiceEnabled) speakText(greeting.content);
+        return;
+      }
+
       const { data: session, error } = await supabase
         .from("therapy_sessions")
         .insert({
@@ -479,7 +494,7 @@ const Chat = () => {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || !sessionId) return;
+    if (!input.trim()) return;
 
     // Stop any ongoing speech when sending a new message
     if (isSpeaking) {
@@ -492,20 +507,50 @@ const Chat = () => {
     setLoading(true);
 
     try {
+      // Create session on first user message for Krishna chat (lazy creation)
+      let currentSessionId = sessionId;
+      if (!currentSessionId && user) {
+        const { data: session, error: sessionError } = await supabase
+          .from("therapy_sessions")
+          .insert({
+            user_id: user.id,
+            therapy_type: therapyType as any,
+            title: generateSessionTitle(therapyType),
+            has_quiz_completed: false,
+          })
+          .select()
+          .single();
+
+        if (sessionError) throw sessionError;
+        currentSessionId = session.id;
+        setSessionId(session.id);
+
+        // Save the initial greeting that was shown
+        if (messages.length > 0 && messages[0].role === "assistant") {
+          await supabase.from("therapy_messages").insert({
+            session_id: session.id,
+            role: "assistant",
+            content: messages[0].content,
+          });
+        }
+      }
+
+      if (!currentSessionId) return;
+
       await supabase.from("therapy_messages").insert({
-        session_id: sessionId,
+        session_id: currentSessionId,
         role: "user",
         content: input,
       });
 
       const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
-          sessionId,
+          sessionId: currentSessionId,
           therapyType,
           messages: [...messages, userMessage],
           quizData,
           messageCount: messages.length + 1,
-          voiceGender,
+          voiceGender: therapyType === "krishna_chat" ? "krishna" : voiceStyle || voiceGender,
           userName,
         },
       });
@@ -519,7 +564,7 @@ const Chat = () => {
       setMessages((prev) => [...prev, assistantMessage]);
 
       await supabase.from("therapy_messages").insert({
-        session_id: sessionId,
+        session_id: currentSessionId,
         role: "assistant",
         content: data.message,
       });
@@ -528,7 +573,7 @@ const Chat = () => {
       await supabase
         .from("therapy_sessions")
         .update({ message_count: messages.length + 2 })
-        .eq("id", sessionId);
+        .eq("id", currentSessionId);
 
       if (voiceEnabled) {
         speakText(data.message);

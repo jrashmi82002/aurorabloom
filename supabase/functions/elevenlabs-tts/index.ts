@@ -14,6 +14,7 @@ const VOICE_MAP: Record<string, string> = {
   arjun: "TX3LPaxmHKxFdv7VOQHJ",        // Liam - Indian masculine
   eleanor: "Xb7hH8MSUJpSbSDYk0k2",      // Alice - British feminine
   james: "JBFqnCBsd6RMkjVDRZzb",        // George - British masculine
+  krishna: "TX3LPaxmHKxFdv7VOQHJ",      // Calm soothing Indian male voice for Krishna
   // Legacy fallbacks
   female: "EXAVITQu4vr4xnSDxMaL",
   male: "onwK4e9ZLuTAKqWW03F9",
