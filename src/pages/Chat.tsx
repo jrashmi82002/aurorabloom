@@ -494,7 +494,7 @@ const Chat = () => {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || !sessionId) return;
+    if (!input.trim()) return;
 
     // Stop any ongoing speech when sending a new message
     if (isSpeaking) {
@@ -507,20 +507,50 @@ const Chat = () => {
     setLoading(true);
 
     try {
+      // Create session on first user message for Krishna chat (lazy creation)
+      let currentSessionId = sessionId;
+      if (!currentSessionId && user) {
+        const { data: session, error: sessionError } = await supabase
+          .from("therapy_sessions")
+          .insert({
+            user_id: user.id,
+            therapy_type: therapyType as any,
+            title: generateSessionTitle(therapyType),
+            has_quiz_completed: false,
+          })
+          .select()
+          .single();
+
+        if (sessionError) throw sessionError;
+        currentSessionId = session.id;
+        setSessionId(session.id);
+
+        // Save the initial greeting that was shown
+        if (messages.length > 0 && messages[0].role === "assistant") {
+          await supabase.from("therapy_messages").insert({
+            session_id: session.id,
+            role: "assistant",
+            content: messages[0].content,
+          });
+        }
+      }
+
+      if (!currentSessionId) return;
+
       await supabase.from("therapy_messages").insert({
-        session_id: sessionId,
+        session_id: currentSessionId,
         role: "user",
         content: input,
       });
 
       const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
-          sessionId,
+          sessionId: currentSessionId,
           therapyType,
           messages: [...messages, userMessage],
           quizData,
           messageCount: messages.length + 1,
-          voiceGender,
+          voiceGender: therapyType === "krishna_chat" ? "krishna" : voiceStyle || voiceGender,
           userName,
         },
       });
@@ -534,7 +564,7 @@ const Chat = () => {
       setMessages((prev) => [...prev, assistantMessage]);
 
       await supabase.from("therapy_messages").insert({
-        session_id: sessionId,
+        session_id: currentSessionId,
         role: "assistant",
         content: data.message,
       });
@@ -543,7 +573,7 @@ const Chat = () => {
       await supabase
         .from("therapy_sessions")
         .update({ message_count: messages.length + 2 })
-        .eq("id", sessionId);
+        .eq("id", currentSessionId);
 
       if (voiceEnabled) {
         speakText(data.message);
