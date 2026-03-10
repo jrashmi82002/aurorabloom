@@ -616,6 +616,32 @@ const Report = () => {
               </CardContent>
             </Card>
 
+            {/* Character Match */}
+            <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20 border-violet-200/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  🎭 Your Character Match
+                </CardTitle>
+                <CardDescription>A character whose journey mirrors yours</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">{stats.characterMatch}</p>
+              </CardContent>
+            </Card>
+
+            {/* Detailed Persona Insight */}
+            <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-950/20 dark:to-pink-950/20 border-rose-200/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  🪞 Who You Are This Month
+                </CardTitle>
+                <CardDescription>A detailed reflection of your personality & patterns</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">{stats.personaInsight}</p>
+              </CardContent>
+            </Card>
+
             {/* Funny Note */}
             <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50">
               <CardContent className="pt-6">
