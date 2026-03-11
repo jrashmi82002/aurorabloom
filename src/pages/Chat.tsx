@@ -643,19 +643,21 @@ const Chat = () => {
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <select
-                value={voiceGender}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setVoiceGender(val.startsWith("male") ? "male" : "female");
-                  setVoiceStyle(val);
-                }}
-                className="text-xs bg-background border border-input rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {voiceOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              {therapyType !== "krishna_chat" && (
+                <select
+                  value={voiceStyle}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setVoiceGender(val.startsWith("male") || val === "marcus" || val === "arjun" || val === "james" ? "male" : "female");
+                    setVoiceStyle(val);
+                  }}
+                  className="text-xs bg-background border border-input rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {voiceOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              )}
               <Button
                 variant="outline"
                 size="icon"
