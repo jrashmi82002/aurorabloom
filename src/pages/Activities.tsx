@@ -279,10 +279,10 @@ const Activities = () => {
   const illusions = [
     {
       title: "Spinning Spirals",
-      description: "Stare at the center for 30 seconds, then look at your hand. Watch it 'breathe'! This optical illusion works because your brain's motion detectors become fatigued.",
+      description: "Stare at the center for 30 seconds, then look at your hand. Watch it 'breathe'!",
       render: () => (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-48 h-48 rounded-full border-8 border-dashed border-primary animate-spin" style={{ animationDuration: "3s" }}>
+        <div className="flex items-center justify-center py-4">
+          <div className="w-40 h-40 rounded-full border-8 border-dashed border-primary animate-spin" style={{ animationDuration: "3s" }}>
             <div className="w-full h-full rounded-full border-4 border-dotted border-accent animate-spin" style={{ animationDuration: "2s", animationDirection: "reverse" }}>
               <div className="w-full h-full rounded-full border-2 border-dashed border-primary/50 animate-spin" style={{ animationDuration: "1.5s" }} />
             </div>
@@ -292,21 +292,21 @@ const Activities = () => {
     },
     {
       title: "Pulsating Grid",
-      description: "Do you see gray dots appearing at the intersections? They're not really there! Your lateral inhibition creates phantom spots. This relaxes your visual cortex.",
+      description: "Do you see gray dots at the intersections? They're not really there!",
       render: () => (
-        <div className="grid grid-cols-6 gap-3 py-8 mx-auto max-w-xs">
+        <div className="grid grid-cols-6 gap-2 py-4 mx-auto max-w-[200px]">
           {Array.from({ length: 36 }).map((_, i) => (
-            <div key={i} className="w-8 h-8 bg-foreground/80 rounded-sm" />
+            <div key={i} className="w-6 h-6 bg-foreground/80 rounded-sm" />
           ))}
         </div>
       ),
     },
     {
       title: "Breathing Colors",
-      description: "Let your eyes relax and watch the colors shift. This gentle color cycling activates your parasympathetic nervous system, promoting calm.",
+      description: "Let your eyes relax and watch the colors shift. Promotes calm.",
       render: () => (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-64 h-64 rounded-full animate-pulse" style={{
+        <div className="flex items-center justify-center py-4">
+          <div className="w-48 h-48 rounded-full animate-pulse" style={{
             background: "radial-gradient(circle, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)))",
             animationDuration: "4s",
           }}>
@@ -315,8 +315,69 @@ const Activities = () => {
               animationDuration: "3s",
               animationDelay: "1s",
             }}>
-              <span className="text-lg font-serif text-foreground/60">Breathe</span>
+              <span className="text-base font-serif text-foreground/60">Breathe</span>
             </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Necker Cube",
+      description: "Focus on the cube - it flips between two orientations! Your brain can't decide which face is in front.",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <svg viewBox="0 0 200 200" className="w-48 h-48">
+            <line x1="50" y1="50" x2="150" y2="50" stroke="currentColor" strokeWidth="2" />
+            <line x1="50" y1="50" x2="50" y2="150" stroke="currentColor" strokeWidth="2" />
+            <line x1="150" y1="50" x2="150" y2="150" stroke="currentColor" strokeWidth="2" />
+            <line x1="50" y1="150" x2="150" y2="150" stroke="currentColor" strokeWidth="2" />
+            <line x1="80" y1="20" x2="180" y2="20" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="80" y1="20" x2="80" y2="120" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="180" y1="20" x2="180" y2="120" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="80" y1="120" x2="180" y2="120" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="50" y1="50" x2="80" y2="20" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+            <line x1="150" y1="50" x2="180" y2="20" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+            <line x1="50" y1="150" x2="80" y2="120" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+            <line x1="150" y1="150" x2="180" y2="120" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+          </svg>
+        </div>
+      ),
+    },
+    {
+      title: "Zöllner Illusion",
+      description: "The long lines are perfectly parallel! Short diagonal lines trick your brain.",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <svg viewBox="0 0 200 160" className="w-56 h-40">
+            {[20, 55, 90, 125].map((y, row) => (
+              <g key={row}>
+                <line x1="10" y1={y} x2="190" y2={y} stroke="currentColor" strokeWidth="2" />
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <line key={i} x1={15 + i * 15} y1={y - 8} x2={15 + i * 15 + (row % 2 === 0 ? 8 : -8)} y2={y + 8} stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                ))}
+              </g>
+            ))}
+          </svg>
+        </div>
+      ),
+    },
+    {
+      title: "Moving Circles",
+      description: "These concentric circles appear to move and shift. Relax and enjoy the motion.",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <div className="relative w-48 h-48">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="absolute inset-0 flex items-center justify-center">
+                <div className="rounded-full border-2 border-dashed border-primary/60 animate-spin"
+                  style={{
+                    width: `${i * 40}px`, height: `${i * 40}px`,
+                    animationDuration: `${i * 2}s`,
+                    animationDirection: i % 2 === 0 ? "reverse" : "normal",
+                  }}
+                />
+              </div>
+            ))}
           </div>
         </div>
       ),
