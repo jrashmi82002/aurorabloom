@@ -686,25 +686,25 @@ const Activities = () => {
                 {/* Krishna Bhajan Dance */}
                 {activeGame === "bhajan" && (
                   <Card className="overflow-hidden">
-                    <CardHeader>
+                    <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
                         <Music2 className="w-5 h-5 text-amber-500" />
                         Krishna Bhajan Dance
                       </CardTitle>
-                      <CardDescription>Let the divine music move you. Dance freely and feel the joy of Krishna's presence! 🙏</CardDescription>
+                      <CardDescription>Let the divine music move you 🙏</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="text-center py-8">
-                        <div className="text-8xl mb-4 transition-transform duration-300" style={{ transform: bhajanPlaying ? `rotate(${dancerFrame * 15 - 52}deg) scale(${1 + Math.sin(dancerFrame) * 0.1})` : 'none' }}>
+                    <CardContent className="space-y-4">
+                      <div className="text-center py-4">
+                        <div className="text-7xl mb-3 transition-transform duration-300" style={{ transform: bhajanPlaying ? `rotate(${dancerFrame * 15 - 52}deg) scale(${1 + Math.sin(dancerFrame) * 0.1})` : 'none' }}>
                           {dancePoses[dancerFrame]}
                         </div>
-                        <div className="flex gap-4 justify-center mb-6">
+                        <div className="flex gap-3 justify-center mb-3">
                           {["🦚", "🪷", "🪈", "🦚"].map((emoji, i) => (
-                            <span key={i} className="text-3xl" style={{ animation: bhajanPlaying ? `pulse 1.5s ease-in-out ${i * 0.3}s infinite` : 'none' }}>{emoji}</span>
+                            <span key={i} className="text-2xl" style={{ animation: bhajanPlaying ? `pulse 1.5s ease-in-out ${i * 0.3}s infinite` : 'none' }}>{emoji}</span>
                           ))}
                         </div>
                         {bhajanPlaying && (
-                          <p className="text-lg font-serif text-amber-600 dark:text-amber-400 animate-pulse mb-4">
+                          <p className="text-base font-serif text-amber-600 dark:text-amber-400 animate-pulse mb-3">
                             ♪ Hare Krishna Hare Krishna, Krishna Krishna Hare Hare ♪
                           </p>
                         )}
@@ -714,9 +714,9 @@ const Activities = () => {
                           </Button>
                         </div>
                       </div>
-                      <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-                        <p className="text-sm text-muted-foreground italic font-serif">
-                          "Dance as if nobody is watching, surrender to the rhythm of the divine. Krishna dances in your heart — let your body follow." 🪈
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                        <p className="text-xs text-muted-foreground italic font-serif">
+                          "Dance as if nobody is watching, surrender to the rhythm of the divine." 🪈
                         </p>
                       </div>
                     </CardContent>

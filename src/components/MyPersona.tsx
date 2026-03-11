@@ -66,16 +66,17 @@ User Data:
 - Sample of what they've shared: ${userMessages.join(" | ").slice(0, 500) || "Not much data yet"}
 
 Write a warm, beautifully themed persona reflection (300-400 words) that covers:
-1. **Who they are** - Their personality type, emotional depth, and character
-2. **Their strengths** - What their therapy journey reveals about their inner strength
+1. **Who they are** - Their personality type, emotional depth, and character. Even with minimal data, infer positive traits from the fact they sought therapy (courage, self-awareness, desire to grow).
+2. **Their strengths** - Highlight key character strengths like bravery, curiosity, kindness, resilience, empathy. Be specific and affirming.
 3. **Their growth pattern** - How they approach healing and self-improvement
 4. **Their emotional landscape** - The feelings they navigate and how they handle them
-5. **A character they remind you of** - From movies, anime, literature, or mythology (explain why)
+5. **A character they remind you of** - From movies, anime, literature, or mythology (explain why). Examples: Naruto (resilience), Arjuna (seeking answers), Hermione (wisdom), Totoro (gentle strength).
 6. **A gentle insight** - Something meaningful about their soul that they might not see themselves
 
-Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use metaphors. Make them feel truly seen and understood. Include a relevant quote from Bhagavad Gita if fitting.
+IMPORTANT: Even if there's very little data (few sessions or messages), STILL write a full, rich reflection. Use the fact that they started this journey as a sign of courage, self-awareness and inner strength. Mention traits like being brave enough to seek help, being introspective, having a desire to grow. Be generous with positive attributes - people need to hear good things about themselves. Make them feel truly special and motivated.
 
-If there's very little data, still write something warm and encouraging based on the fact that they've started this journey.`;
+Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use metaphors. Make them feel truly seen and understood. Include a relevant quote from Bhagavad Gita.`;
+
 
       const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
