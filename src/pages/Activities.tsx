@@ -492,8 +492,8 @@ const Activities = () => {
                       <div>
                         <p className="font-medium">Unlock More with Pro!</p>
                         <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                          <li>📖 Gita Wisdom · 🌙 Meditation · ⏱️ Focus Timer</li>
-                          <li>🙏 Gratitude Journal · 🌀 Mind Illusions</li>
+                          <li>🎶 Krishna Bhajan Dance · 🌙 Meditation · ⏱️ Focus Timer</li>
+                          <li>🙏 Gratitude Journal · 🌀 Illusions</li>
                         </ul>
                       </div>
                     </div>
