@@ -501,6 +501,19 @@ const Chat = () => {
       stopSpeaking();
     }
 
+    // Check message limit for free users
+    if (!isPro && user) {
+      const { data: canSend } = await supabase.rpc("can_user_send_message", { user_id_param: user.id });
+      if (!canSend) {
+        toast({
+          title: "Daily limit reached",
+          description: "Your free message limit has been reached for today. Try therapy activities for now, or request Pro access for unlimited messaging.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
