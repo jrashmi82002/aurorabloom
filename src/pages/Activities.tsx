@@ -726,10 +726,10 @@ const Activities = () => {
                 {/* Mind Illusions (Pro) */}
                 {activeGame === "illusions" && (
                   <Card className="overflow-hidden">
-                    <CardHeader>
+                    <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
                         <Eye className="w-5 h-5 text-violet-500" />
-                        Mind Illusions
+                        Illusions
                       </CardTitle>
                       <CardDescription>Optical illusions that relax and fascinate your mind</CardDescription>
                     </CardHeader>
