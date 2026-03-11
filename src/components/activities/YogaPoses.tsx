@@ -103,7 +103,7 @@ export const YogaPoses = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(yogaPoses[0].duration);
   const [completedPoses, setCompletedPoses] = useState<number[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentPose = yogaPoses[currentPoseIndex];
   const progress = ((currentPose.duration - timeRemaining) / currentPose.duration) * 100;

@@ -7,7 +7,7 @@ export const useCalmingSounds = () => {
   const gainNodeRef = useRef<GainNode | null>(null);
   const [playingSound, setPlayingSound] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getAudioContext = () => {
     if (!audioContextRef.current) {

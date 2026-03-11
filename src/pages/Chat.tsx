@@ -63,7 +63,7 @@ const Chat = () => {
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
-  const [voiceStyle, setVoiceStyle] = useState<string>("default");
+  const [voiceStyle, setVoiceStyle] = useState<string>(therapyType === "krishna_chat" ? "krishna" : "maya");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
@@ -501,6 +501,19 @@ const Chat = () => {
       stopSpeaking();
     }
 
+    // Check message limit for free users
+    if (!isPro && user) {
+      const { data: canSend } = await supabase.rpc("can_user_send_message", { user_id_param: user.id });
+      if (!canSend) {
+        toast({
+          title: "Daily limit reached",
+          description: "Your free message limit has been reached for today. Try therapy activities for now, or request Pro access for unlimited messaging.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -636,24 +649,28 @@ const Chat = () => {
               <h1 className="text-lg font-serif font-semibold truncate">
                 {therapyTitles[therapyType]}
               </h1>
-              <p className="text-sm text-muted-foreground">
-                with {therapistName} 🌿
-              </p>
+              {therapyType !== "krishna_chat" && (
+                <p className="text-sm text-muted-foreground">
+                  with {therapistName} 🌿
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <select
-                value={voiceGender}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setVoiceGender(val.startsWith("male") ? "male" : "female");
-                  setVoiceStyle(val);
-                }}
-                className="text-xs bg-background border border-input rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {voiceOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              {therapyType !== "krishna_chat" && (
+                <select
+                  value={voiceStyle}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setVoiceGender(val.startsWith("male") || val === "marcus" || val === "arjun" || val === "james" ? "male" : "female");
+                    setVoiceStyle(val);
+                  }}
+                  className="text-xs bg-background border border-input rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {voiceOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              )}
               <Button
                 variant="outline"
                 size="icon"

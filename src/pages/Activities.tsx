@@ -77,7 +77,7 @@ const Activities = () => {
       { phase: "exhale" as const, duration: 6000 },
     ];
     let phaseIndex = 0;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     const cyclePhases = () => {
       setBreathePhase(phases[phaseIndex].phase);
       timeoutId = setTimeout(() => {
@@ -153,16 +153,74 @@ const Activities = () => {
 
   const handleMouseUp = () => setIsDrawing(false);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (drawingTool !== "fill") return;
+  const floodFill = (startX: number, startY: number, fillColor: string) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx || !canvas) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Parse fill color
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = 1; tempCanvas.height = 1;
+    const tempCtx = tempCanvas.getContext("2d")!;
+    tempCtx.fillStyle = fillColor;
+    tempCtx.fillRect(0, 0, 1, 1);
+    const fc = tempCtx.getImageData(0, 0, 1, 1).data;
+
+    const getPixel = (x: number, y: number) => {
+      const i = (y * width + x) * 4;
+      return [data[i], data[i + 1], data[i + 2], data[i + 3]];
+    };
+    const setPixel = (x: number, y: number) => {
+      const i = (y * width + x) * 4;
+      data[i] = fc[0]; data[i + 1] = fc[1]; data[i + 2] = fc[2]; data[i + 3] = 255;
+    };
+    const colorsMatch = (a: number[], b: number[], tolerance = 32) => {
+      return Math.abs(a[0] - b[0]) <= tolerance && Math.abs(a[1] - b[1]) <= tolerance && Math.abs(a[2] - b[2]) <= tolerance;
+    };
+
+    const sx = Math.floor(startX);
+    const sy = Math.floor(startY);
+    if (sx < 0 || sx >= width || sy < 0 || sy >= height) return;
+
+    const targetColor = getPixel(sx, sy);
+    if (colorsMatch([fc[0], fc[1], fc[2]], targetColor)) return;
+
+    const stack: [number, number][] = [[sx, sy]];
+    const visited = new Set<number>();
+
+    while (stack.length > 0) {
+      const [x, y] = stack.pop()!;
+      const key = y * width + x;
+      if (visited.has(key)) continue;
+      if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+      const pixel = getPixel(x, y);
+      if (!colorsMatch(pixel, targetColor)) continue;
+
+      visited.add(key);
+      setPixel(x, y);
+
+      stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (drawingTool !== "fill") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    ctx.beginPath();
-    ctx.arc(e.clientX - rect.left, e.clientY - rect.top, 50, 0, Math.PI * 2);
-    ctx.fillStyle = brushColor;
-    ctx.fill();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    floodFill(x, y, brushColor);
   };
 
   const clearCanvas = () => {
@@ -221,10 +279,10 @@ const Activities = () => {
   const illusions = [
     {
       title: "Spinning Spirals",
-      description: "Stare at the center for 30 seconds, then look at your hand. Watch it 'breathe'! This optical illusion works because your brain's motion detectors become fatigued.",
+      description: "Stare at the center for 30 seconds, then look at your hand. Watch it 'breathe'!",
       render: () => (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-48 h-48 rounded-full border-8 border-dashed border-primary animate-spin" style={{ animationDuration: "3s" }}>
+        <div className="flex items-center justify-center py-4">
+          <div className="w-40 h-40 rounded-full border-8 border-dashed border-primary animate-spin" style={{ animationDuration: "3s" }}>
             <div className="w-full h-full rounded-full border-4 border-dotted border-accent animate-spin" style={{ animationDuration: "2s", animationDirection: "reverse" }}>
               <div className="w-full h-full rounded-full border-2 border-dashed border-primary/50 animate-spin" style={{ animationDuration: "1.5s" }} />
             </div>
@@ -234,21 +292,21 @@ const Activities = () => {
     },
     {
       title: "Pulsating Grid",
-      description: "Do you see gray dots appearing at the intersections? They're not really there! Your lateral inhibition creates phantom spots. This relaxes your visual cortex.",
+      description: "Do you see gray dots at the intersections? They're not really there!",
       render: () => (
-        <div className="grid grid-cols-6 gap-3 py-8 mx-auto max-w-xs">
+        <div className="grid grid-cols-6 gap-2 py-4 mx-auto max-w-[200px]">
           {Array.from({ length: 36 }).map((_, i) => (
-            <div key={i} className="w-8 h-8 bg-foreground/80 rounded-sm" />
+            <div key={i} className="w-6 h-6 bg-foreground/80 rounded-sm" />
           ))}
         </div>
       ),
     },
     {
       title: "Breathing Colors",
-      description: "Let your eyes relax and watch the colors shift. This gentle color cycling activates your parasympathetic nervous system, promoting calm.",
+      description: "Let your eyes relax and watch the colors shift. Promotes calm.",
       render: () => (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-64 h-64 rounded-full animate-pulse" style={{
+        <div className="flex items-center justify-center py-4">
+          <div className="w-48 h-48 rounded-full animate-pulse" style={{
             background: "radial-gradient(circle, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)))",
             animationDuration: "4s",
           }}>
@@ -257,8 +315,69 @@ const Activities = () => {
               animationDuration: "3s",
               animationDelay: "1s",
             }}>
-              <span className="text-lg font-serif text-foreground/60">Breathe</span>
+              <span className="text-base font-serif text-foreground/60">Breathe</span>
             </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Necker Cube",
+      description: "Focus on the cube - it flips between two orientations! Your brain can't decide which face is in front.",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <svg viewBox="0 0 200 200" className="w-48 h-48">
+            <line x1="50" y1="50" x2="150" y2="50" stroke="currentColor" strokeWidth="2" />
+            <line x1="50" y1="50" x2="50" y2="150" stroke="currentColor" strokeWidth="2" />
+            <line x1="150" y1="50" x2="150" y2="150" stroke="currentColor" strokeWidth="2" />
+            <line x1="50" y1="150" x2="150" y2="150" stroke="currentColor" strokeWidth="2" />
+            <line x1="80" y1="20" x2="180" y2="20" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="80" y1="20" x2="80" y2="120" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="180" y1="20" x2="180" y2="120" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="80" y1="120" x2="180" y2="120" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+            <line x1="50" y1="50" x2="80" y2="20" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+            <line x1="150" y1="50" x2="180" y2="20" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+            <line x1="50" y1="150" x2="80" y2="120" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+            <line x1="150" y1="150" x2="180" y2="120" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+          </svg>
+        </div>
+      ),
+    },
+    {
+      title: "Zöllner Illusion",
+      description: "The long lines are perfectly parallel! Short diagonal lines trick your brain.",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <svg viewBox="0 0 200 160" className="w-56 h-40">
+            {[20, 55, 90, 125].map((y, row) => (
+              <g key={row}>
+                <line x1="10" y1={y} x2="190" y2={y} stroke="currentColor" strokeWidth="2" />
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <line key={i} x1={15 + i * 15} y1={y - 8} x2={15 + i * 15 + (row % 2 === 0 ? 8 : -8)} y2={y + 8} stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                ))}
+              </g>
+            ))}
+          </svg>
+        </div>
+      ),
+    },
+    {
+      title: "Moving Circles",
+      description: "These concentric circles appear to move and shift. Relax and enjoy the motion.",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <div className="relative w-48 h-48">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="absolute inset-0 flex items-center justify-center">
+                <div className="rounded-full border-2 border-dashed border-primary/60 animate-spin"
+                  style={{
+                    width: `${i * 40}px`, height: `${i * 40}px`,
+                    animationDuration: `${i * 2}s`,
+                    animationDirection: i % 2 === 0 ? "reverse" : "normal",
+                  }}
+                />
+              </div>
+            ))}
           </div>
         </div>
       ),
@@ -274,15 +393,15 @@ const Activities = () => {
     { id: "sounds", title: "Calming Sounds", description: "Nature sounds for relaxation", icon: Music, color: "from-green-400 to-emerald-500" },
     { id: "yogaPoses", title: "Yoga Asanas", description: "Guided yoga poses with timer", icon: Flower2, color: "from-indigo-400 to-violet-500" },
     { id: "memory", title: "Memory Match", description: "Relaxing memory card game", icon: Puzzle, color: "from-rose-400 to-pink-500" },
-    { id: "bhajan", title: "Krishna Bhajan Dance", description: "Dance to divine Krishna bhajans", icon: Music2, color: "from-amber-400 to-yellow-500" },
+    { id: "gita", title: "Gita Wisdom", description: "Sacred verses with healing stories", icon: BookOpen, color: "from-orange-400 to-amber-500" },
   ];
 
   const proActivities = [
-    { id: "gita", title: "Gita Wisdom", description: "Sacred verses with healing stories", icon: BookOpen, color: "from-orange-400 to-amber-500", isPro: true },
+    { id: "bhajan", title: "Krishna Bhajan Dance", description: "Dance to divine Krishna bhajans", icon: Music2, color: "from-amber-400 to-yellow-500", isPro: true },
     { id: "meditation", title: "Meditation", description: "Guided meditation with calming sounds", icon: Moon, color: "from-purple-400 to-indigo-500", isPro: true },
     { id: "focus", title: "Focus Timer", description: "Pomodoro-style focus sessions", icon: Timer, color: "from-teal-400 to-cyan-500", isPro: true },
     { id: "gratitude", title: "Gratitude Journal", description: "Daily gratitude reflection", icon: Brain, color: "from-yellow-400 to-amber-500", isPro: true },
-    { id: "illusions", title: "Mind Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600", isPro: true },
+    { id: "illusions", title: "Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600", isPro: true },
   ];
 
   const allActivities = isPro ? [...activities, ...proActivities] : activities;
@@ -373,8 +492,8 @@ const Activities = () => {
                       <div>
                         <p className="font-medium">Unlock More with Pro!</p>
                         <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                          <li>📖 Gita Wisdom · 🌙 Meditation · ⏱️ Focus Timer</li>
-                          <li>🙏 Gratitude Journal · 🌀 Mind Illusions</li>
+                          <li>🎶 Krishna Bhajan Dance · 🌙 Meditation · ⏱️ Focus Timer</li>
+                          <li>🙏 Gratitude Journal · 🌀 Illusions</li>
                         </ul>
                       </div>
                     </div>
@@ -567,25 +686,25 @@ const Activities = () => {
                 {/* Krishna Bhajan Dance */}
                 {activeGame === "bhajan" && (
                   <Card className="overflow-hidden">
-                    <CardHeader>
+                    <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
                         <Music2 className="w-5 h-5 text-amber-500" />
                         Krishna Bhajan Dance
                       </CardTitle>
-                      <CardDescription>Let the divine music move you. Dance freely and feel the joy of Krishna's presence! 🙏</CardDescription>
+                      <CardDescription>Let the divine music move you 🙏</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="text-center py-8">
-                        <div className="text-8xl mb-4 transition-transform duration-300" style={{ transform: bhajanPlaying ? `rotate(${dancerFrame * 15 - 52}deg) scale(${1 + Math.sin(dancerFrame) * 0.1})` : 'none' }}>
+                    <CardContent className="space-y-4">
+                      <div className="text-center py-4">
+                        <div className="text-7xl mb-3 transition-transform duration-300" style={{ transform: bhajanPlaying ? `rotate(${dancerFrame * 15 - 52}deg) scale(${1 + Math.sin(dancerFrame) * 0.1})` : 'none' }}>
                           {dancePoses[dancerFrame]}
                         </div>
-                        <div className="flex gap-4 justify-center mb-6">
+                        <div className="flex gap-3 justify-center mb-3">
                           {["🦚", "🪷", "🪈", "🦚"].map((emoji, i) => (
-                            <span key={i} className="text-3xl" style={{ animation: bhajanPlaying ? `pulse 1.5s ease-in-out ${i * 0.3}s infinite` : 'none' }}>{emoji}</span>
+                            <span key={i} className="text-2xl" style={{ animation: bhajanPlaying ? `pulse 1.5s ease-in-out ${i * 0.3}s infinite` : 'none' }}>{emoji}</span>
                           ))}
                         </div>
                         {bhajanPlaying && (
-                          <p className="text-lg font-serif text-amber-600 dark:text-amber-400 animate-pulse mb-4">
+                          <p className="text-base font-serif text-amber-600 dark:text-amber-400 animate-pulse mb-3">
                             ♪ Hare Krishna Hare Krishna, Krishna Krishna Hare Hare ♪
                           </p>
                         )}
@@ -595,9 +714,9 @@ const Activities = () => {
                           </Button>
                         </div>
                       </div>
-                      <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-                        <p className="text-sm text-muted-foreground italic font-serif">
-                          "Dance as if nobody is watching, surrender to the rhythm of the divine. Krishna dances in your heart — let your body follow." 🪈
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                        <p className="text-xs text-muted-foreground italic font-serif">
+                          "Dance as if nobody is watching, surrender to the rhythm of the divine." 🪈
                         </p>
                       </div>
                     </CardContent>
@@ -607,10 +726,10 @@ const Activities = () => {
                 {/* Mind Illusions (Pro) */}
                 {activeGame === "illusions" && (
                   <Card className="overflow-hidden">
-                    <CardHeader>
+                    <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
                         <Eye className="w-5 h-5 text-violet-500" />
-                        Mind Illusions
+                        Illusions
                       </CardTitle>
                       <CardDescription>Optical illusions that relax and fascinate your mind</CardDescription>
                     </CardHeader>
