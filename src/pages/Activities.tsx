@@ -153,16 +153,74 @@ const Activities = () => {
 
   const handleMouseUp = () => setIsDrawing(false);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (drawingTool !== "fill") return;
+  const floodFill = (startX: number, startY: number, fillColor: string) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx || !canvas) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Parse fill color
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = 1; tempCanvas.height = 1;
+    const tempCtx = tempCanvas.getContext("2d")!;
+    tempCtx.fillStyle = fillColor;
+    tempCtx.fillRect(0, 0, 1, 1);
+    const fc = tempCtx.getImageData(0, 0, 1, 1).data;
+
+    const getPixel = (x: number, y: number) => {
+      const i = (y * width + x) * 4;
+      return [data[i], data[i + 1], data[i + 2], data[i + 3]];
+    };
+    const setPixel = (x: number, y: number) => {
+      const i = (y * width + x) * 4;
+      data[i] = fc[0]; data[i + 1] = fc[1]; data[i + 2] = fc[2]; data[i + 3] = 255;
+    };
+    const colorsMatch = (a: number[], b: number[], tolerance = 32) => {
+      return Math.abs(a[0] - b[0]) <= tolerance && Math.abs(a[1] - b[1]) <= tolerance && Math.abs(a[2] - b[2]) <= tolerance;
+    };
+
+    const sx = Math.floor(startX);
+    const sy = Math.floor(startY);
+    if (sx < 0 || sx >= width || sy < 0 || sy >= height) return;
+
+    const targetColor = getPixel(sx, sy);
+    if (colorsMatch([fc[0], fc[1], fc[2]], targetColor)) return;
+
+    const stack: [number, number][] = [[sx, sy]];
+    const visited = new Set<number>();
+
+    while (stack.length > 0) {
+      const [x, y] = stack.pop()!;
+      const key = y * width + x;
+      if (visited.has(key)) continue;
+      if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+      const pixel = getPixel(x, y);
+      if (!colorsMatch(pixel, targetColor)) continue;
+
+      visited.add(key);
+      setPixel(x, y);
+
+      stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (drawingTool !== "fill") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    ctx.beginPath();
-    ctx.arc(e.clientX - rect.left, e.clientY - rect.top, 50, 0, Math.PI * 2);
-    ctx.fillStyle = brushColor;
-    ctx.fill();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    floodFill(x, y, brushColor);
   };
 
   const clearCanvas = () => {
