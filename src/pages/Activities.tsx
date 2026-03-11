@@ -274,15 +274,15 @@ const Activities = () => {
     { id: "sounds", title: "Calming Sounds", description: "Nature sounds for relaxation", icon: Music, color: "from-green-400 to-emerald-500" },
     { id: "yogaPoses", title: "Yoga Asanas", description: "Guided yoga poses with timer", icon: Flower2, color: "from-indigo-400 to-violet-500" },
     { id: "memory", title: "Memory Match", description: "Relaxing memory card game", icon: Puzzle, color: "from-rose-400 to-pink-500" },
-    { id: "bhajan", title: "Krishna Bhajan Dance", description: "Dance to divine Krishna bhajans", icon: Music2, color: "from-amber-400 to-yellow-500" },
+    { id: "gita", title: "Gita Wisdom", description: "Sacred verses with healing stories", icon: BookOpen, color: "from-orange-400 to-amber-500" },
   ];
 
   const proActivities = [
-    { id: "gita", title: "Gita Wisdom", description: "Sacred verses with healing stories", icon: BookOpen, color: "from-orange-400 to-amber-500", isPro: true },
+    { id: "bhajan", title: "Krishna Bhajan Dance", description: "Dance to divine Krishna bhajans", icon: Music2, color: "from-amber-400 to-yellow-500", isPro: true },
     { id: "meditation", title: "Meditation", description: "Guided meditation with calming sounds", icon: Moon, color: "from-purple-400 to-indigo-500", isPro: true },
     { id: "focus", title: "Focus Timer", description: "Pomodoro-style focus sessions", icon: Timer, color: "from-teal-400 to-cyan-500", isPro: true },
     { id: "gratitude", title: "Gratitude Journal", description: "Daily gratitude reflection", icon: Brain, color: "from-yellow-400 to-amber-500", isPro: true },
-    { id: "illusions", title: "Mind Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600", isPro: true },
+    { id: "illusions", title: "Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600", isPro: true },
   ];
 
   const allActivities = isPro ? [...activities, ...proActivities] : activities;
