@@ -63,7 +63,7 @@ const Chat = () => {
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
-  const [voiceStyle, setVoiceStyle] = useState<string>("default");
+  const [voiceStyle, setVoiceStyle] = useState<string>(therapyType === "krishna_chat" ? "krishna" : "maya");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
