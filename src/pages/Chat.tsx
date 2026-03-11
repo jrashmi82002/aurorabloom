@@ -636,9 +636,11 @@ const Chat = () => {
               <h1 className="text-lg font-serif font-semibold truncate">
                 {therapyTitles[therapyType]}
               </h1>
-              <p className="text-sm text-muted-foreground">
-                with {therapistName} 🌿
-              </p>
+              {therapyType !== "krishna_chat" && (
+                <p className="text-sm text-muted-foreground">
+                  with {therapistName} 🌿
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <select

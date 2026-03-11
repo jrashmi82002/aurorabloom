@@ -137,9 +137,6 @@ const Home = () => {
                 </Button>
               </div>
 
-              <p className="text-xs text-muted-foreground/60">
-                Press Enter to start chatting instantly — with voice, emoji, and full therapist support
-              </p>
             </div>
 
             {/* Scroll indicator */}

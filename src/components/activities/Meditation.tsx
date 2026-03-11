@@ -22,7 +22,7 @@ export const Meditation = () => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const oscillatorsRef = useRef<OscillatorNode[]>([]);
 
   useEffect(() => {
