@@ -77,7 +77,7 @@ const Activities = () => {
       { phase: "exhale" as const, duration: 6000 },
     ];
     let phaseIndex = 0;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     const cyclePhases = () => {
       setBreathePhase(phases[phaseIndex].phase);
       timeoutId = setTimeout(() => {
