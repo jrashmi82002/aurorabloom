@@ -46,7 +46,7 @@ const Activities = () => {
   // Bhajan dance state
   const [bhajanPlaying, setBhajanPlaying] = useState(false);
   const [dancerFrame, setDancerFrame] = useState(0);
-  const bhajanAudioRef = useRef<HTMLAudioElement | null>(null);
+  const bhajanPlayerRef = useRef<ReturnType<typeof createKrishnaBhajanAudio> | null>(null);
   
   // Illusion state
   const [currentIllusion, setCurrentIllusion] = useState(0);
