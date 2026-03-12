@@ -270,36 +270,34 @@ const Activities = () => {
   const toggleBhajan = () => {
     if (bhajanPlaying) {
       setBhajanPlaying(false);
-      if (bhajanAudioRef.current) {
-        bhajanAudioRef.current.pause();
-        bhajanAudioRef.current.currentTime = 0;
+      if (bhajanPlayerRef.current) {
+        bhajanPlayerRef.current.stop();
+        bhajanPlayerRef.current = null;
       }
     } else {
       setBhajanPlaying(true);
-      if (!bhajanAudioRef.current) {
-        bhajanAudioRef.current = new Audio("/sounds/krishna-bhajan.mp3");
-        bhajanAudioRef.current.loop = true;
-        bhajanAudioRef.current.volume = 0.7;
+      if (!bhajanPlayerRef.current) {
+        bhajanPlayerRef.current = createKrishnaBhajanAudio();
       }
-      bhajanAudioRef.current.play().catch(console.error);
+      bhajanPlayerRef.current.play();
     }
   };
 
   // Cleanup bhajan audio
   useEffect(() => {
     return () => {
-      if (bhajanAudioRef.current) {
-        bhajanAudioRef.current.pause();
-        bhajanAudioRef.current = null;
+      if (bhajanPlayerRef.current) {
+        bhajanPlayerRef.current.stop();
+        bhajanPlayerRef.current = null;
       }
     };
   }, []);
 
   useEffect(() => {
     if (activeGame !== "bhajan") {
-      if (bhajanAudioRef.current) {
-        bhajanAudioRef.current.pause();
-        bhajanAudioRef.current.currentTime = 0;
+      if (bhajanPlayerRef.current) {
+        bhajanPlayerRef.current.stop();
+        bhajanPlayerRef.current = null;
       }
       setBhajanPlaying(false);
     }
