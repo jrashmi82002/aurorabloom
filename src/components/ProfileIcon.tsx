@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Crown, MessageCircle, Infinity, Settings, LogOut, Sparkles, BookHeart } from "lucide-react";
+import { Crown, MessageCircle, Infinity, Settings, LogOut, Sparkles, BookHeart, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -31,11 +32,35 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
   const [dailySessionCount, setDailySessionCount] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [personaOpen, setPersonaOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchUserProfile();
+    checkAuth();
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setIsLoggedIn(true);
+        fetchUserProfile();
+      } else {
+        setIsLoggedIn(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setIsLoggedIn(true);
+      fetchUserProfile();
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    
     const channel = supabase
       .channel("profile-status")
       .on(
@@ -57,7 +82,7 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [isLoggedIn]);
 
   const fetchUserProfile = async () => {
     try {
@@ -104,6 +129,16 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+
+  // Not logged in - show login button
+  if (!isLoggedIn) {
+    return (
+      <Button variant="outline" size="sm" onClick={() => navigate("/auth")} className="gap-2">
+        <LogIn className="w-4 h-4" />
+        Sign In
+      </Button>
+    );
+  }
 
   return (
     <Popover>
@@ -220,6 +255,7 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
               <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="font-serif">My Persona</DialogTitle>
+                  <DialogDescription>Your personalized reflection based on your journey</DialogDescription>
                 </DialogHeader>
                 <MyPersona />
               </DialogContent>
@@ -235,6 +271,7 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
               <DialogContent className="max-w-sm">
                 <DialogHeader>
                   <DialogTitle className="text-base">Account Settings</DialogTitle>
+                  <DialogDescription>Manage your account preferences</DialogDescription>
                 </DialogHeader>
                 <AccountSettings />
               </DialogContent>

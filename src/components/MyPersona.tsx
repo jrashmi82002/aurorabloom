@@ -6,10 +6,22 @@ import { Card, CardContent } from "@/components/ui/card";
 export const MyPersona = () => {
   const [loading, setLoading] = useState(true);
   const [persona, setPersona] = useState<string>("");
+  const [mbtiResult, setMbtiResult] = useState<string | null>(null);
 
   useEffect(() => {
+    loadMbtiResult();
     generatePersona();
   }, []);
+
+  const loadMbtiResult = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // Check localStorage for MBTI result
+      const stored = localStorage.getItem(`mbti_result_${user.id}`);
+      if (stored) setMbtiResult(stored);
+    } catch {}
+  };
 
   const generatePersona = async () => {
     try {
@@ -28,21 +40,17 @@ export const MyPersona = () => {
       const diary = diaryRes.data || [];
 
       // Get some recent messages for deeper insight
-      const recentSessionIds = sessions.slice(0, 5).map(s => s.id);
       let recentMessages: any[] = [];
-      if (recentSessionIds.length > 0) {
-        // Load messages from therapy_sessions first
-        const sessionWithIds = sessions.slice(0, 5);
-        for (const s of sessionWithIds) {
-          const { data: msgs } = await supabase
-            .from("therapy_messages")
-            .select("content, role")
-            .eq("session_id", (s as any).id || s)
-            .eq("role", "user")
-            .order("created_at", { ascending: false })
-            .limit(5);
-          if (msgs) recentMessages.push(...msgs);
-        }
+      const sessionWithIds = sessions.slice(0, 5);
+      for (const s of sessionWithIds) {
+        const { data: msgs } = await supabase
+          .from("therapy_messages")
+          .select("content, role")
+          .eq("session_id", s.id)
+          .eq("role", "user")
+          .order("created_at", { ascending: false })
+          .limit(5);
+        if (msgs) recentMessages.push(...msgs);
       }
 
       const therapyTypes = sessions.map(s => s.therapy_type);
@@ -55,6 +63,8 @@ export const MyPersona = () => {
       const diaryThemes = diary.map(d => d.theme).filter(Boolean);
       const userMessages = recentMessages.map(m => m.content).slice(0, 10);
 
+      const storedMbti = localStorage.getItem(`mbti_result_${user.id}`);
+
       const prompt = `You are a thoughtful, poetic personality analyst. Based on this person's therapy journey, create a beautiful, detailed persona reflection.
 
 User Data:
@@ -64,6 +74,7 @@ User Data:
 - Recent diary moods: ${moods.join(", ") || "No diary entries yet"}
 - Diary themes: ${diaryThemes.join(", ") || "None"}
 - Sample of what they've shared: ${userMessages.join(" | ").slice(0, 500) || "Not much data yet"}
+${storedMbti ? `- MBTI Personality Type: ${storedMbti}` : ""}
 
 Write a warm, beautifully themed persona reflection (300-400 words) that covers:
 1. **Who they are** - Their personality type, emotional depth, and character. Even with minimal data, infer positive traits from the fact they sought therapy (courage, self-awareness, desire to grow).
@@ -72,11 +83,17 @@ Write a warm, beautifully themed persona reflection (300-400 words) that covers:
 4. **Their emotional landscape** - The feelings they navigate and how they handle them
 5. **A character they remind you of** - From movies, anime, literature, or mythology (explain why). Examples: Naruto (resilience), Arjuna (seeking answers), Hermione (wisdom), Totoro (gentle strength).
 6. **A gentle insight** - Something meaningful about their soul that they might not see themselves
+${storedMbti ? `7. **Their MBTI (${storedMbti})** - Weave their personality type into the reflection naturally, explaining how it manifests in their journey.` : ""}
 
-IMPORTANT: Even if there's very little data (few sessions or messages), STILL write a full, rich reflection. Use the fact that they started this journey as a sign of courage, self-awareness and inner strength. Mention traits like being brave enough to seek help, being introspective, having a desire to grow. Be generous with positive attributes - people need to hear good things about themselves. Make them feel truly special and motivated.
+CRITICAL INSTRUCTION: You MUST write a full 300-400 word reflection NO MATTER WHAT. Even if there are ZERO sessions or messages, write a complete, rich, affirming reflection. Use the fact that they downloaded a therapy app and are exploring their inner world as evidence of tremendous courage, self-awareness, intellectual curiosity, and emotional intelligence. Infer that they are:
+- Brave (seeking help takes immense courage)
+- Self-aware (recognizing the need for growth)
+- Curious (exploring different modalities)
+- Emotionally intelligent (willing to examine feelings)
+- Resilient (showing up for themselves)
+NEVER say "we don't know much about you" or "not enough data" or anything dismissive. ALWAYS provide a full, beautiful, affirming reflection.
 
 Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use metaphors. Make them feel truly seen and understood. Include a relevant quote from Bhagavad Gita.`;
-
 
       const { data, error } = await supabase.functions.invoke("therapy-chat", {
         body: {
@@ -96,7 +113,7 @@ Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use
       setPersona(data.message);
     } catch (error) {
       console.error("Error generating persona:", error);
-      setPersona("We're still getting to know you. Keep journaling, chatting, and exploring — your persona reflection will bloom as your journey unfolds. 🌱");
+      setPersona("You are a soul of quiet courage — the kind of person who steps into the unknown with an open heart. The very fact that you are here, exploring your inner world, speaks volumes about your strength and self-awareness. You carry within you the light of curiosity, the warmth of empathy, and the resilience of someone who refuses to stop growing. Like Arjuna standing at the crossroads, you seek answers not from fear, but from a deep desire to understand yourself and the world around you. Your journey is just beginning, and already it shines with promise. 🌱\n\n*\"योगस्थः कुरु कर्माणि\" — Established in yoga, perform your actions.* — Bhagavad Gita 2.48");
     } finally {
       setLoading(false);
     }
@@ -118,11 +135,16 @@ Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use
           <Sparkles className="w-5 h-5 text-primary" />
           <h3 className="font-serif text-lg">Your Inner Reflection</h3>
         </div>
+        {mbtiResult && (
+          <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <p className="text-sm font-semibold text-primary">Personality Type: {mbtiResult}</p>
+          </div>
+        )}
         <div className="prose prose-sm dark:prose-invert max-w-none">
           {persona.split('\n').map((paragraph, i) => (
             paragraph.trim() ? (
               <p key={i} className="text-sm text-muted-foreground leading-relaxed mb-3">
-                {paragraph.replace(/\*\*(.*?)\*\*/g, '').trim()}
+                {paragraph.replace(/\*\*(.*?)\*\*/g, '$1').trim()}
               </p>
             ) : null
           ))}
