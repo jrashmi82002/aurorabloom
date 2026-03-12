@@ -412,6 +412,7 @@ serve(async (req) => {
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    }
 
     if (!isGuestMode && !isPersonaGeneration && sessionId && sessionId !== "persona-generation" && sessionId !== "guest-session") {
       const authHeader2 = req.headers.get('Authorization');
