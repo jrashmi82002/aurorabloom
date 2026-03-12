@@ -10,6 +10,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye, Undo2, UserCircle } from "lucide-react";
 import { useCalmingSounds } from "@/hooks/useCalmingSounds";
+import { createKrishnaBhajanAudio } from "@/hooks/useKrishnaBhajan";
 import { GitaVerses } from "@/components/activities/GitaVerses";
 import { YogaPoses } from "@/components/activities/YogaPoses";
 import { Meditation } from "@/components/activities/Meditation";
