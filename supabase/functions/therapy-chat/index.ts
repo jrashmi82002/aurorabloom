@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const getTherapistName = (therapyType: string, voiceGender: string) => {
@@ -371,7 +371,7 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, therapyType, messages, isInitial, quizData, messageCount, voiceGender = "female", userName } = await req.json();
+    const { sessionId, therapyType, messages, isInitial, quizData, messageCount, voiceGender = "female", userName, isGuestMode, isPersonaGeneration } = await req.json();
 
     if (isInitial) {
       return new Response(
@@ -380,36 +380,54 @@ serve(async (req) => {
       );
     }
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    // Guest mode and persona generation: skip strict auth, use anon key
+    if (isGuestMode || isPersonaGeneration) {
+      // For guest mode, skip session validation but still require some auth
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
       );
+
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    if (!isGuestMode && !isPersonaGeneration && sessionId && sessionId !== "persona-generation" && sessionId !== "guest-session") {
+      const authHeader2 = req.headers.get('Authorization');
+      const supabaseClient2 = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader2! } } }
       );
-    }
-
-    if (sessionId) {
-      const { data: session, error: sessionError } = await supabaseClient
+      const { data: session, error: sessionError } = await supabaseClient2
         .from('therapy_sessions')
         .select('user_id, therapy_type')
         .eq('id', sessionId)
         .single();
 
-      if (sessionError || !session || session.user_id !== user.id) {
+      if (sessionError || !session) {
         return new Response(
           JSON.stringify({ error: 'Session not found or unauthorized' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
