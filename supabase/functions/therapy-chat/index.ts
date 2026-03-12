@@ -413,23 +413,26 @@ serve(async (req) => {
         );
       }
 
-    if (sessionId) {
-      const { data: session, error: sessionError } = await supabaseClient
+    if (!isGuestMode && !isPersonaGeneration && sessionId && sessionId !== "persona-generation" && sessionId !== "guest-session") {
+      const authHeader2 = req.headers.get('Authorization');
+      const supabaseClient2 = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader2! } } }
+      );
+      const { data: session, error: sessionError } = await supabaseClient2
         .from('therapy_sessions')
         .select('user_id, therapy_type')
         .eq('id', sessionId)
         .single();
 
-      if (sessionError || !session || session.user_id !== user.id) {
+      if (sessionError || !session) {
         return new Response(
           JSON.stringify({ error: 'Session not found or unauthorized' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
-
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
 
     const therapistName = getTherapistName(therapyType, voiceGender);
     const promptFn = therapyPrompts[therapyType] || therapyPrompts.talk_therapy;
