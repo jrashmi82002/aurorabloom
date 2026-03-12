@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -8,11 +8,13 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
-import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye } from "lucide-react";
+import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye, Undo2, UserCircle } from "lucide-react";
 import { useCalmingSounds } from "@/hooks/useCalmingSounds";
 import { GitaVerses } from "@/components/activities/GitaVerses";
 import { YogaPoses } from "@/components/activities/YogaPoses";
 import { Meditation } from "@/components/activities/Meditation";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const Activities = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -25,6 +27,7 @@ const Activities = () => {
   const [brushColor, setBrushColor] = useState("#4ade80");
   const [drawingTool, setDrawingTool] = useState<"brush" | "eraser" | "fill">("brush");
   const [breathePhase, setBreathePhase] = useState<"inhale" | "hold" | "exhale">("inhale");
+  const [canvasHistory, setCanvasHistory] = useState<ImageData[]>([]);
   
   const { playSound, stopSound, playingSound, isLoading: soundLoading } = useCalmingSounds();
   
@@ -42,11 +45,17 @@ const Activities = () => {
   // Bhajan dance state
   const [bhajanPlaying, setBhajanPlaying] = useState(false);
   const [dancerFrame, setDancerFrame] = useState(0);
+  const bhajanAudioRef = useRef<HTMLAudioElement | null>(null);
   
   // Illusion state
   const [currentIllusion, setCurrentIllusion] = useState(0);
   const [illusionTimer, setIllusionTimer] = useState(30);
   const [illusionRunning, setIllusionRunning] = useState(false);
+
+  // MBTI quiz state
+  const [mbtiStep, setMbtiStep] = useState(0);
+  const [mbtiAnswers, setMbtiAnswers] = useState<string[]>([]);
+  const [mbtiResult, setMbtiResult] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -102,6 +111,8 @@ const Activities = () => {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.lineWidth = 4;
+    // Save initial state
+    setCanvasHistory([ctx.getImageData(0, 0, canvas.width, canvas.height)]);
   }, [activeGame]);
 
   // Bhajan dancer animation
@@ -129,6 +140,23 @@ const Activities = () => {
     return () => clearInterval(interval);
   }, [activeGame, illusionRunning]);
 
+  const saveCanvasState = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas) return;
+    const state = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    setCanvasHistory(prev => [...prev.slice(-20), state]); // Keep max 20 states
+  }, []);
+
+  const undoCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas || canvasHistory.length <= 1) return;
+    const newHistory = canvasHistory.slice(0, -1);
+    setCanvasHistory(newHistory);
+    ctx.putImageData(newHistory[newHistory.length - 1], 0, 0);
+  }, [canvasHistory]);
+
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDrawing(true);
     const canvas = canvasRef.current;
@@ -151,7 +179,12 @@ const Activities = () => {
     ctx.stroke();
   };
 
-  const handleMouseUp = () => setIsDrawing(false);
+  const handleMouseUp = () => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      saveCanvasState();
+    }
+  };
 
   const floodFill = (startX: number, startY: number, fillColor: string) => {
     const canvas = canvasRef.current;
@@ -163,7 +196,6 @@ const Activities = () => {
     const width = canvas.width;
     const height = canvas.height;
 
-    // Parse fill color
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = 1; tempCanvas.height = 1;
     const tempCtx = tempCanvas.getContext("2d")!;
@@ -209,6 +241,7 @@ const Activities = () => {
     }
 
     ctx.putImageData(imageData, 0, 0);
+    saveCanvasState();
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -229,7 +262,47 @@ const Activities = () => {
     if (!ctx || !canvas) return;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    saveCanvasState();
   };
+
+  // Bhajan audio
+  const toggleBhajan = () => {
+    if (bhajanPlaying) {
+      setBhajanPlaying(false);
+      if (bhajanAudioRef.current) {
+        bhajanAudioRef.current.pause();
+        bhajanAudioRef.current.currentTime = 0;
+      }
+    } else {
+      setBhajanPlaying(true);
+      if (!bhajanAudioRef.current) {
+        bhajanAudioRef.current = new Audio("/sounds/krishna-bhajan.mp3");
+        bhajanAudioRef.current.loop = true;
+        bhajanAudioRef.current.volume = 0.7;
+      }
+      bhajanAudioRef.current.play().catch(console.error);
+    }
+  };
+
+  // Cleanup bhajan audio
+  useEffect(() => {
+    return () => {
+      if (bhajanAudioRef.current) {
+        bhajanAudioRef.current.pause();
+        bhajanAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeGame !== "bhajan") {
+      if (bhajanAudioRef.current) {
+        bhajanAudioRef.current.pause();
+        bhajanAudioRef.current.currentTime = 0;
+      }
+      setBhajanPlaying(false);
+    }
+  }, [activeGame]);
 
   const sounds = [
     { key: "ocean", label: "🌊 Ocean Waves" },
@@ -273,6 +346,36 @@ const Activities = () => {
         setMatchedCards([...matchedCards, ...newFlipped]);
       }
       setTimeout(() => setFlippedCards([]), 1000);
+    }
+  };
+
+  // MBTI Quiz
+  const mbtiQuestions = [
+    { q: "At a gathering, you prefer to:", a: "E:Engage with many people|I:Have deep conversations with a few" },
+    { q: "You are more drawn to:", a: "S:Concrete facts and details|N:Ideas and possibilities" },
+    { q: "When making decisions, you rely more on:", a: "T:Logic and analysis|F:Values and feelings" },
+    { q: "You prefer your life to be:", a: "J:Planned and organized|P:Flexible and spontaneous" },
+    { q: "You get energized by:", a: "E:Being around people|I:Spending time alone" },
+    { q: "You trust more:", a: "S:Your experience|N:Your intuition" },
+    { q: "You value more:", a: "T:Truth and fairness|F:Harmony and compassion" },
+    { q: "You prefer to:", a: "J:Decide things quickly|P:Keep options open" },
+    { q: "In conversations, you tend to:", a: "E:Think out loud|I:Think before speaking" },
+    { q: "You focus more on:", a: "S:What is real now|N:What could be possible" },
+    { q: "When a friend is upset, you first:", a: "F:Empathize with their feelings|T:Help them find a solution" },
+    { q: "Your workspace is usually:", a: "J:Neat and organized|P:Creatively messy" },
+  ];
+
+  const calculateMbti = () => {
+    const counts: Record<string, number> = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+    mbtiAnswers.forEach(a => {
+      const letter = a.split(":")[0];
+      counts[letter] = (counts[letter] || 0) + 1;
+    });
+    const type = `${counts.E >= counts.I ? 'E' : 'I'}${counts.S >= counts.N ? 'S' : 'N'}${counts.T >= counts.F ? 'T' : 'F'}${counts.J >= counts.P ? 'J' : 'P'}`;
+    setMbtiResult(type);
+    // Save to localStorage
+    if (user) {
+      localStorage.setItem(`mbti_result_${user.id}`, type);
     }
   };
 
@@ -323,7 +426,7 @@ const Activities = () => {
     },
     {
       title: "Necker Cube",
-      description: "Focus on the cube - it flips between two orientations! Your brain can't decide which face is in front.",
+      description: "Focus on the cube - it flips between two orientations!",
       render: () => (
         <div className="flex items-center justify-center py-4">
           <svg viewBox="0 0 200 200" className="w-48 h-48">
@@ -363,7 +466,7 @@ const Activities = () => {
     },
     {
       title: "Moving Circles",
-      description: "These concentric circles appear to move and shift. Relax and enjoy the motion.",
+      description: "These concentric circles appear to move and shift.",
       render: () => (
         <div className="flex items-center justify-center py-4">
           <div className="relative w-48 h-48">
@@ -379,6 +482,31 @@ const Activities = () => {
               </div>
             ))}
           </div>
+        </div>
+      ),
+    },
+    {
+      title: "Hermann Grid",
+      description: "Dark spots appear at white intersections but vanish when you look directly!",
+      render: () => (
+        <div className="grid grid-cols-5 gap-3 py-4 mx-auto max-w-[220px]">
+          {Array.from({ length: 25 }).map((_, i) => (
+            <div key={i} className="w-8 h-8 bg-foreground rounded" />
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: "Rotating Snakes",
+      description: "These circles appear to rotate, but they are perfectly still!",
+      render: () => (
+        <div className="flex items-center justify-center py-4 gap-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="w-24 h-24 rounded-full" style={{
+              background: `conic-gradient(from ${i * 120}deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--muted)), hsl(var(--primary)))`,
+              animation: `spin ${3 + i}s linear infinite ${i % 2 === 0 ? '' : 'reverse'}`,
+            }} />
+          ))}
         </div>
       ),
     },
@@ -402,6 +530,7 @@ const Activities = () => {
     { id: "focus", title: "Focus Timer", description: "Pomodoro-style focus sessions", icon: Timer, color: "from-teal-400 to-cyan-500", isPro: true },
     { id: "gratitude", title: "Gratitude Journal", description: "Daily gratitude reflection", icon: Brain, color: "from-yellow-400 to-amber-500", isPro: true },
     { id: "illusions", title: "Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600", isPro: true },
+    { id: "mbti", title: "Personality Quiz", description: "Discover your MBTI personality type", icon: UserCircle, color: "from-pink-400 to-rose-600", isPro: true },
   ];
 
   const allActivities = isPro ? [...activities, ...proActivities] : activities;
@@ -421,6 +550,25 @@ const Activities = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const mbtiDescriptions: Record<string, string> = {
+    INTJ: "The Architect — Imaginative and strategic thinkers with a plan for everything.",
+    INTP: "The Logician — Innovative inventors with an unquenchable thirst for knowledge.",
+    ENTJ: "The Commander — Bold, imaginative, and strong-willed leaders.",
+    ENTP: "The Debater — Smart and curious thinkers who love intellectual challenges.",
+    INFJ: "The Advocate — Quiet and mystical, yet very inspiring and tireless idealists.",
+    INFP: "The Mediator — Poetic, kind, and altruistic, always eager to help a good cause.",
+    ENFJ: "The Protagonist — Charismatic and inspiring leaders who mesmerize their listeners.",
+    ENFP: "The Campaigner — Enthusiastic, creative, and sociable free spirits.",
+    ISTJ: "The Logistician — Practical and fact-minded, whose reliability cannot be doubted.",
+    ISFJ: "The Defender — Very dedicated and warm protectors, always ready to defend loved ones.",
+    ESTJ: "The Executive — Excellent administrators, unsurpassed at managing things or people.",
+    ESFJ: "The Consul — Extraordinarily caring, social, and popular, always eager to help.",
+    ISTP: "The Virtuoso — Bold and practical experimenters, masters of all kinds of tools.",
+    ISFP: "The Adventurer — Flexible and charming, always ready to explore and experience something new.",
+    ESTP: "The Entrepreneur — Smart, energetic, and very perceptive, living on the edge.",
+    ESFP: "The Entertainer — Spontaneous, energetic, and enthusiastic, life is never boring around them.",
   };
 
   if (!user) return null;
@@ -493,7 +641,7 @@ const Activities = () => {
                         <p className="font-medium">Unlock More with Pro!</p>
                         <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
                           <li>🎶 Krishna Bhajan Dance · 🌙 Meditation · ⏱️ Focus Timer</li>
-                          <li>🙏 Gratitude Journal · 🌀 Illusions</li>
+                          <li>🙏 Gratitude Journal · 🌀 Illusions · 🧠 Personality Quiz</li>
                         </ul>
                       </div>
                     </div>
@@ -502,7 +650,7 @@ const Activities = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <Button variant="outline" onClick={() => { setActiveGame(null); stopSound(); setBhajanPlaying(false); setIllusionRunning(false); }}>
+                <Button variant="outline" onClick={() => { setActiveGame(null); stopSound(); setBhajanPlaying(false); setIllusionRunning(false); setMbtiStep(0); setMbtiAnswers([]); setMbtiResult(null); }}>
                   ← Back to Activities
                 </Button>
 
@@ -550,6 +698,9 @@ const Activities = () => {
                         {["#4ade80", "#60a5fa", "#f472b6", "#fbbf24", "#a78bfa", "#000000"].map((color) => (
                           <button key={color} className={`w-6 h-6 rounded-full border-2 ${brushColor === color ? "border-foreground" : "border-transparent"}`} style={{ backgroundColor: color }} onClick={() => setBrushColor(color)} />
                         ))}
+                        <Button variant="outline" size="sm" onClick={undoCanvas} disabled={canvasHistory.length <= 1} className="gap-1">
+                          <Undo2 className="w-3 h-3" /> Undo
+                        </Button>
                         <Button variant="outline" size="sm" onClick={clearCanvas}>Clear</Button>
                       </div>
                     </CardHeader>
@@ -635,10 +786,6 @@ const Activities = () => {
                       <CardDescription>Pomodoro-style deep focus session</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="p-4 rounded-lg bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border border-teal-500/20">
-                        <h4 className="font-semibold text-sm mb-2">🎯 How to use</h4>
-                        <p className="text-sm text-muted-foreground">Choose duration, remove distractions, focus on ONE task. Take 5-min break after each session.</p>
-                      </div>
                       <div className="flex flex-col items-center py-4">
                         <div className="text-6xl font-mono font-bold mb-8">{formatTime(focusTime)}</div>
                         <div className="flex gap-2">
@@ -709,7 +856,7 @@ const Activities = () => {
                           </p>
                         )}
                         <div className="flex gap-3 justify-center">
-                          <Button onClick={() => { setBhajanPlaying(!bhajanPlaying); if (!bhajanPlaying) playSound("ocean"); else stopSound(); }} className="gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:opacity-90">
+                          <Button onClick={toggleBhajan} className="gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:opacity-90">
                             {bhajanPlaying ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Play Bhajan</>}
                           </Button>
                         </div>
@@ -723,7 +870,7 @@ const Activities = () => {
                   </Card>
                 )}
 
-                {/* Mind Illusions (Pro) */}
+                {/* Illusions */}
                 {activeGame === "illusions" && (
                   <Card className="overflow-hidden">
                     <CardHeader className="pb-2">
@@ -733,15 +880,15 @@ const Activities = () => {
                       </CardTitle>
                       <CardDescription>Optical illusions that relax and fascinate your mind</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-4">
                       <div className="text-center">
-                        <h3 className="text-xl font-serif font-bold mb-2">{illusions[currentIllusion].title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">{illusions[currentIllusion].description}</p>
+                        <h3 className="text-xl font-serif font-bold mb-1">{illusions[currentIllusion].title}</h3>
+                        <p className="text-sm text-muted-foreground mb-2 max-w-md mx-auto">{illusions[currentIllusion].description}</p>
                       </div>
                       
                       {illusions[currentIllusion].render()}
 
-                      <div className="flex flex-col items-center gap-4">
+                      <div className="flex flex-col items-center gap-3">
                         <div className="text-3xl font-mono font-bold">{illusionTimer}s</div>
                         <div className="flex gap-2">
                           <Button onClick={() => setIllusionRunning(!illusionRunning)} className="gap-2">
@@ -749,16 +896,85 @@ const Activities = () => {
                             {illusionRunning ? "Pause" : "Start Timer"}
                           </Button>
                           <Button variant="outline" onClick={() => { setCurrentIllusion((currentIllusion + 1) % illusions.length); setIllusionTimer(30); setIllusionRunning(false); }}>
-                            Next Illusion →
+                            Next →
                           </Button>
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20 text-center">
-                        <p className="text-sm text-muted-foreground italic">
-                          💡 Fun fact: Optical illusions work because your brain takes shortcuts when processing visual information. Watching them mindfully trains your brain to slow down and observe more carefully.
+                      <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/20 text-center">
+                        <p className="text-xs text-muted-foreground italic">
+                          💡 Optical illusions train your brain to slow down and observe more carefully.
                         </p>
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* MBTI Personality Quiz */}
+                {activeGame === "mbti" && (
+                  <Card className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <UserCircle className="w-5 h-5 text-pink-500" />
+                        Personality Quiz (MBTI)
+                      </CardTitle>
+                      <CardDescription>Discover your personality type</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {mbtiResult ? (
+                        <div className="text-center space-y-4 py-4">
+                          <div className="text-5xl font-bold text-primary">{mbtiResult}</div>
+                          <p className="text-lg font-serif">{mbtiDescriptions[mbtiResult]}</p>
+                          <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                            <p className="text-sm text-muted-foreground">
+                              Your result has been saved! Check your <strong>My Persona</strong> section under the profile icon for a detailed reflection incorporating your personality type.
+                            </p>
+                          </div>
+                          <Button onClick={() => { setMbtiStep(0); setMbtiAnswers([]); setMbtiResult(null); }}>Retake Quiz</Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-6 py-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Question {mbtiStep + 1} of {mbtiQuestions.length}</span>
+                            <div className="w-32 h-2 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${((mbtiStep + 1) / mbtiQuestions.length) * 100}%` }} />
+                            </div>
+                          </div>
+                          <h3 className="text-lg font-serif">{mbtiQuestions[mbtiStep].q}</h3>
+                          <RadioGroup
+                            value={mbtiAnswers[mbtiStep] || ""}
+                            onValueChange={(val) => {
+                              const newAnswers = [...mbtiAnswers];
+                              newAnswers[mbtiStep] = val;
+                              setMbtiAnswers(newAnswers);
+                            }}
+                          >
+                            {mbtiQuestions[mbtiStep].a.split("|").map((opt) => {
+                              const label = opt.split(":")[1];
+                              return (
+                                <div key={opt} className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                                  <RadioGroupItem value={opt} id={`mbti-${opt}`} />
+                                  <Label htmlFor={`mbti-${opt}`} className="cursor-pointer flex-1">{label}</Label>
+                                </div>
+                              );
+                            })}
+                          </RadioGroup>
+                          <div className="flex justify-between">
+                            <Button variant="outline" onClick={() => setMbtiStep(Math.max(0, mbtiStep - 1))} disabled={mbtiStep === 0}>
+                              Back
+                            </Button>
+                            {mbtiStep < mbtiQuestions.length - 1 ? (
+                              <Button onClick={() => setMbtiStep(mbtiStep + 1)} disabled={!mbtiAnswers[mbtiStep]}>
+                                Next
+                              </Button>
+                            ) : (
+                              <Button onClick={calculateMbti} disabled={!mbtiAnswers[mbtiStep]}>
+                                See Result
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
