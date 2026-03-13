@@ -509,6 +509,52 @@ const Activities = () => {
         </div>
       ),
     },
+    {
+      title: "Impossible Trident",
+      description: "Count the prongs — is it two or three? Your brain can't decide!",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <svg viewBox="0 0 200 140" className="w-56 h-36">
+            <rect x="30" y="10" width="20" height="120" fill="currentColor" opacity="0.7" rx="2" />
+            <rect x="90" y="10" width="20" height="120" fill="currentColor" opacity="0.7" rx="2" />
+            <rect x="150" y="10" width="20" height="120" fill="currentColor" opacity="0.7" rx="2" />
+            <rect x="30" y="10" width="140" height="20" fill="currentColor" opacity="0.5" rx="2" />
+            <line x1="50" y1="130" x2="90" y2="130" stroke="currentColor" strokeWidth="20" strokeLinecap="round" opacity="0.5" />
+            <line x1="110" y1="130" x2="150" y2="130" stroke="currentColor" strokeWidth="20" strokeLinecap="round" opacity="0.5" />
+          </svg>
+        </div>
+      ),
+    },
+    {
+      title: "Cafe Wall",
+      description: "The horizontal lines are perfectly straight and parallel!",
+      render: () => (
+        <div className="flex flex-col items-center py-4 gap-0">
+          {[0, 1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="flex" style={{ marginLeft: row % 2 === 0 ? '0px' : '12px' }}>
+              {Array.from({ length: 8 }).map((_, col) => (
+                <div key={col} className={`w-6 h-5 ${col % 2 === 0 ? 'bg-foreground' : 'bg-background'}`} />
+              ))}
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: "Kanizsa Triangle",
+      description: "You see a bright white triangle — but it doesn't actually exist!",
+      render: () => (
+        <div className="flex items-center justify-center py-4">
+          <svg viewBox="0 0 200 180" className="w-48 h-44">
+            <circle cx="100" cy="20" r="25" fill="currentColor" />
+            <circle cx="40" cy="150" r="25" fill="currentColor" />
+            <circle cx="160" cy="150" r="25" fill="currentColor" />
+            <polygon points="100,25 45,145 155,145" fill="hsl(var(--background))" />
+            <polygon points="100,40 55,140 145,140" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+          </svg>
+        </div>
+      ),
+    },
   ];
 
   const dancePoses = ["🕺", "💃", "🙏", "🤲", "🙌", "👐", "🤸", "🧘"];
