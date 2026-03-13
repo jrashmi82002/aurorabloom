@@ -510,6 +510,37 @@ const Chat = () => {
       .trim();
   };
 
+  // Browser-native TTS fallback
+  const speakWithBrowserTTS = (text: string) => {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    
+    // Try to pick a good voice
+    const voices = synth.getVoices();
+    const preferred = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('google')) 
+      || voices.find(v => v.lang.startsWith('en') && !v.localService)
+      || voices.find(v => v.lang.startsWith('en'))
+      || voices[0];
+    if (preferred) utterance.voice = preferred;
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      setIsLoadingVoice(false);
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      setIsLoadingVoice(false);
+    };
+    
+    setIsLoadingVoice(false);
+    synth.speak(utterance);
+  };
+
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
     
@@ -518,8 +549,9 @@ const Chat = () => {
     setIsSpeaking(true);
     setIsPaused(false);
     
+    const cleanedText = cleanTextForSpeech(text);
+    
     try {
-      const cleanedText = cleanTextForSpeech(text);
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
@@ -537,13 +569,16 @@ const Chat = () => {
       );
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.error("TTS error response:", errText);
-        throw new Error(`TTS request failed: ${response.status}`);
+        console.warn("ElevenLabs TTS failed, falling back to browser TTS");
+        speakWithBrowserTTS(cleanedText);
+        return;
       }
 
       const audioBlob = await response.blob();
-      if (audioBlob.size === 0) throw new Error("Empty audio response");
+      if (audioBlob.size === 0) {
+        speakWithBrowserTTS(cleanedText);
+        return;
+      }
       
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
@@ -567,10 +602,8 @@ const Chat = () => {
       await audio.play();
       setIsLoadingVoice(false);
     } catch (error) {
-      console.error("TTS error:", error);
-      setIsSpeaking(false);
-      setIsPaused(false);
-      setIsLoadingVoice(false);
+      console.warn("ElevenLabs TTS error, using browser fallback:", error);
+      speakWithBrowserTTS(cleanedText);
     }
   };
 
@@ -578,12 +611,18 @@ const Chat = () => {
     if (audioRef.current && !audioRef.current.paused) {
       audioRef.current.pause();
       setIsPaused(true);
+    } else if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+      setIsPaused(true);
     }
   };
 
   const resumeSpeaking = () => {
     if (audioRef.current && audioRef.current.paused) {
       audioRef.current.play();
+      setIsPaused(false);
+    } else if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
       setIsPaused(false);
     }
   };
@@ -594,6 +633,7 @@ const Chat = () => {
       audioRef.current.currentTime = 0;
       audioRef.current = null;
     }
+    window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setIsPaused(false);
   };
