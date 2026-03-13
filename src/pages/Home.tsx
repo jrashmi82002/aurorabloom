@@ -36,7 +36,7 @@ const Home = () => {
   const [typingDone, setTypingDone] = useState(false);
   
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
