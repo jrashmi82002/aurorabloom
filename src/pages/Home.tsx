@@ -34,7 +34,7 @@ const Home = () => {
   const [quickInput, setQuickInput] = useState("");
   const [displayedText, setDisplayedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
-  const [guestMessages, setGuestMessages] = useState<{ role: string; content: string }[]>([]);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
