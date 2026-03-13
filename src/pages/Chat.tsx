@@ -5,11 +5,65 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, Volume2, VolumeX, Square, Play, PanelLeftClose, PanelLeft, Pause, Loader2 } from "lucide-react";
+import { Send, Volume2, VolumeX, Square, Play, PanelLeft, Pause, Loader2, FileText, Gamepad2, BookOpen, Newspaper, Sparkles, LogIn, X } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Guest sidebar with locked features
+const GuestSidebar = ({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) => {
+  const navigate = useNavigate();
+
+  const handleLockedNav = (path: string) => {
+    navigate("/auth");
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onToggle} />
+      <aside className="fixed md:relative w-72 border-r border-border/50 bg-background/95 backdrop-blur-sm flex flex-col shrink-0 h-full animate-fade-in z-50">
+        <div className="p-4 border-b border-border/50 flex items-center justify-between">
+          <Logo size="sm" />
+          <Button variant="ghost" size="icon" onClick={onToggle}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-4 text-center text-muted-foreground text-sm">
+            <p className="text-xs mb-2">Sign in to save your sessions</p>
+          </div>
+        </ScrollArea>
+        <div className="p-3 border-t border-border/50 space-y-1 shrink-0">
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/report")}>
+            <FileText className="w-4 h-4" /> Monthly Report
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/activities")}>
+            <Gamepad2 className="w-4 h-4" /> Therapy Activities
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/diary")}>
+            <BookOpen className="w-4 h-4" /> My Diary
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/blog")}>
+            <Newspaper className="w-4 h-4" /> Healing Blog
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 text-amber-600 dark:text-amber-400 opacity-60" onClick={() => handleLockedNav("/chat?type=krishna_chat")}>
+            <Sparkles className="w-4 h-4" /> 🙏 Talk to Krishna
+          </Button>
+          <div className="pt-2 border-t border-border/30 mt-2">
+            <Button variant="default" className="w-full justify-start gap-2 h-9 bg-gradient-calm" onClick={() => navigate("/auth")}>
+              <LogIn className="w-4 h-4" /> Sign In
+            </Button>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};
 
 interface Message {
   role: "user" | "assistant";
