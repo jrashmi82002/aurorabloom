@@ -149,7 +149,7 @@ const Home = () => {
                 />
                 <Button
                   onClick={handleQuickChat}
-                  disabled={!quickInput.trim() || guestLoading}
+                  disabled={!quickInput.trim()}
                   className="h-14 px-6 rounded-2xl bg-gradient-calm hover:opacity-90 transition-opacity"
                 >
                   <Send className="w-5 h-5" />
@@ -157,45 +157,14 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Guest chat messages */}
-            {guestMessages.length > 0 && (
-              <div className="max-w-2xl w-full mt-6 space-y-3">
-                {guestMessages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <Card className={`max-w-[85%] p-3 ${msg.role === "user" ? "bg-gradient-calm text-white border-0" : "bg-card"}`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                    </Card>
-                  </div>
-                ))}
-                {guestLoading && (
-                  <div className="flex justify-start">
-                    <Card className="p-3 bg-card">
-                      <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-150" />
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-300" />
-                      </div>
-                    </Card>
-                  </div>
-                )}
-                {!user && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    <button onClick={() => navigate("/auth")} className="text-primary hover:underline">Sign in</button> to save your conversations and unlock all features.
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* Scroll indicator */}
-            {guestMessages.length === 0 && (
-              <button
-                onClick={scrollToTherapies}
-                className="absolute bottom-8 flex flex-col items-center gap-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors animate-bounce"
-              >
-                <span className="text-xs">Or choose a therapy type</span>
-                <ChevronDown className="w-5 h-5" />
-              </button>
-            )}
+            <button
+              onClick={scrollToTherapies}
+              className="absolute bottom-8 flex flex-col items-center gap-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors animate-bounce"
+            >
+              <span className="text-xs">Or choose a therapy type</span>
+              <ChevronDown className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Therapy types section */}
