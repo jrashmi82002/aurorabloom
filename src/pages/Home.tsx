@@ -77,42 +77,13 @@ const Home = () => {
     navigate(`/chat?type=${therapyType}`);
   };
 
-  const handleQuickChat = async () => {
+  const handleQuickChat = () => {
     if (!quickInput.trim()) return;
 
     if (user) {
-      // Logged in - go to chat page
       navigate(`/chat?type=talk_therapy&skipQuiz=true&firstMessage=${encodeURIComponent(quickInput.trim())}`);
-      return;
-    }
-
-    // Guest mode - ephemeral chat on home page
-    const userMsg = { role: "user", content: quickInput.trim() };
-    setGuestMessages(prev => [...prev, userMsg]);
-    setQuickInput("");
-    setGuestLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("therapy-chat", {
-        body: {
-          sessionId: "guest-session",
-          therapyType: "talk_therapy",
-          isInitial: false,
-          messages: [...guestMessages, userMsg],
-          quizData: null,
-          messageCount: guestMessages.length + 1,
-          voiceGender: "female",
-          userName: "",
-          isGuestMode: true,
-        },
-      });
-
-      if (error) throw error;
-      setGuestMessages(prev => [...prev, { role: "assistant", content: data.message }]);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setGuestLoading(false);
+    } else {
+      navigate(`/chat?type=talk_therapy&guest=true&skipQuiz=true&firstMessage=${encodeURIComponent(quickInput.trim())}`);
     }
   };
 
