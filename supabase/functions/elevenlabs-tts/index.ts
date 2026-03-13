@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,14 +7,13 @@ const corsHeaders = {
 
 // Voice mapping for all therapist personas
 const VOICE_MAP: Record<string, string> = {
-  maya: "EXAVITQu4vr4xnSDxMaL",        // Sarah - warm feminine (default)
-  marcus: "onwK4e9ZLuTAKqWW03F9",       // Daniel - clear masculine (default)
+  maya: "EXAVITQu4vr4xnSDxMaL",        // Sarah - warm feminine
+  marcus: "onwK4e9ZLuTAKqWW03F9",       // Daniel - clear masculine
   priya: "cgSgspJ2msm6clMCkdW9",        // Jessica - Indian modern feminine
   arjun: "TX3LPaxmHKxFdv7VOQHJ",        // Liam - Indian masculine
   eleanor: "Xb7hH8MSUJpSbSDYk0k2",      // Alice - British feminine
   james: "JBFqnCBsd6RMkjVDRZzb",        // George - British masculine
-  krishna: "TX3LPaxmHKxFdv7VOQHJ",      // Calm soothing Indian male voice for Krishna
-  // Legacy fallbacks
+  krishna: "TX3LPaxmHKxFdv7VOQHJ",      // Calm soothing Indian male voice
   female: "EXAVITQu4vr4xnSDxMaL",
   male: "onwK4e9ZLuTAKqWW03F9",
 };
@@ -26,29 +24,6 @@ serve(async (req) => {
   }
 
   try {
-    // Authenticate the user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const { text, voiceGender } = await req.json();
 
     if (!text || typeof text !== "string") {
@@ -64,8 +39,6 @@ serve(async (req) => {
     }
 
     const voiceId = VOICE_MAP[voiceGender || "maya"] || VOICE_MAP.maya;
-
-    // Truncate to 5000 chars for API limits
     const truncatedText = text.slice(0, 5000);
 
     const response = await fetch(
@@ -78,7 +51,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           text: truncatedText,
-          model_id: "eleven_turbo_v2_5",
+          model_id: "eleven_multilingual_v2",
           voice_settings: {
             stability: 0.6,
             similarity_boost: 0.75,
@@ -93,7 +66,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("ElevenLabs API error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "TTS generation failed" }), {
+      return new Response(JSON.stringify({ error: "TTS generation failed", details: errorText }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
