@@ -53,13 +53,14 @@ const Chat = () => {
   const existingSessionId = searchParams.get("session");
   const skipQuizParam = searchParams.get("skipQuiz") === "true" || therapyType === "krishna_chat";
   const firstMessageParam = searchParams.get("firstMessage");
+  const isGuestMode = searchParams.get("guest") === "true";
   
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [showQuiz, setShowQuiz] = useState(!skipQuizParam);
+  const [showQuiz, setShowQuiz] = useState(!skipQuizParam && !isGuestMode);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
@@ -92,6 +93,23 @@ const Chat = () => {
     ];
 
   useEffect(() => {
+    if (isGuestMode) {
+      // Guest mode: show greeting immediately, no auth needed
+      setShowQuiz(false);
+      const greeting: Message = {
+        role: "assistant",
+        content: therapyType === "krishna_chat"
+          ? `🙏 Hare Krishna, dear soul.\n\nI am here. Speak your heart — your joys, your sorrows, your questions about life.\n\nWhat weighs on your mind today?`
+          : `Hello! 🌿 I'm here to listen and support you. This is a safe space — feel free to share whatever is on your mind.\n\nHow are you feeling today?`
+      };
+      setMessages([greeting]);
+      if (firstMessageParam) {
+        // Auto-send the first message from the home page
+        handleGuestFirstMessage(greeting, firstMessageParam);
+      }
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");
@@ -103,12 +121,40 @@ const Chat = () => {
         if (existingSessionId) {
           loadExistingSession(existingSessionId);
         } else if (skipQuizParam) {
-          // Auto-initialize session without quiz
           initializeQuickSession(session.user.id);
         }
       }
     });
   }, [navigate, existingSessionId]);
+
+  const handleGuestFirstMessage = async (greeting: Message, msg: string) => {
+    const userMsg: Message = { role: "user", content: msg };
+    setMessages(prev => [...prev, userMsg]);
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("therapy-chat", {
+        body: {
+          sessionId: "guest-session",
+          therapyType,
+          isInitial: false,
+          messages: [greeting, userMsg],
+          quizData: null,
+          messageCount: 2,
+          voiceGender: "female",
+          userName: "",
+          isGuestMode: true,
+        },
+      });
+      if (error) throw error;
+      const reply: Message = { role: "assistant", content: data.message };
+      setMessages(prev => [...prev, reply]);
+      if (voiceEnabled) speakText(reply.content);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkProStatus = async (userId: string) => {
     const { data: profile } = await supabase
