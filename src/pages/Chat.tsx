@@ -687,9 +687,9 @@ const Chat = () => {
 
   const therapistName = getTherapistName(voiceStyle || voiceGender, voiceOptions);
 
-  if (!user) return null;
+  if (!user && !isGuestMode) return null;
 
-  if (showQuiz && !existingSessionId) {
+  if (showQuiz && !existingSessionId && user) {
     return (
       <PreSessionQuiz
         userId={user.id}
@@ -702,7 +702,11 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gradient-soft">
-      <AppSidebar userId={user.id} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
+      {user ? (
+        <AppSidebar userId={user.id} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
+      ) : (
+        <GuestSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
+      )}
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
