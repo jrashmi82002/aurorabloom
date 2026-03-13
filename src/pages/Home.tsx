@@ -10,7 +10,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
-import { useToast } from "@/components/ui/use-toast";
+
 
 const therapyTypes = [
   { id: "yogic", title: "Yogic Therapy", description: "Ancient wisdom through breathing, meditation, and mindful movement", icon: FlowerIcon, color: "from-purple-400 to-purple-600" },
@@ -34,10 +34,9 @@ const Home = () => {
   const [quickInput, setQuickInput] = useState("");
   const [displayedText, setDisplayedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
-  const [guestMessages, setGuestMessages] = useState<{ role: string; content: string }[]>([]);
-  const [guestLoading, setGuestLoading] = useState(false);
+  
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -77,42 +76,13 @@ const Home = () => {
     navigate(`/chat?type=${therapyType}`);
   };
 
-  const handleQuickChat = async () => {
+  const handleQuickChat = () => {
     if (!quickInput.trim()) return;
 
     if (user) {
-      // Logged in - go to chat page
       navigate(`/chat?type=talk_therapy&skipQuiz=true&firstMessage=${encodeURIComponent(quickInput.trim())}`);
-      return;
-    }
-
-    // Guest mode - ephemeral chat on home page
-    const userMsg = { role: "user", content: quickInput.trim() };
-    setGuestMessages(prev => [...prev, userMsg]);
-    setQuickInput("");
-    setGuestLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("therapy-chat", {
-        body: {
-          sessionId: "guest-session",
-          therapyType: "talk_therapy",
-          isInitial: false,
-          messages: [...guestMessages, userMsg],
-          quizData: null,
-          messageCount: guestMessages.length + 1,
-          voiceGender: "female",
-          userName: "",
-          isGuestMode: true,
-        },
-      });
-
-      if (error) throw error;
-      setGuestMessages(prev => [...prev, { role: "assistant", content: data.message }]);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setGuestLoading(false);
+    } else {
+      navigate(`/chat?type=talk_therapy&guest=true&skipQuiz=true&firstMessage=${encodeURIComponent(quickInput.trim())}`);
     }
   };
 
@@ -156,7 +126,7 @@ const Home = () => {
           </div>
 
           {/* Hero section with quick chat */}
-          <div className={`${guestMessages.length > 0 ? 'pt-12 pb-4' : 'min-h-[calc(100vh-73px)]'} flex flex-col items-center justify-center px-6 relative`}>
+          <div className="min-h-[calc(100vh-73px)] flex flex-col items-center justify-center px-6 relative">
             <div className="max-w-2xl w-full text-center space-y-8">
               <div className="space-y-3">
                 <h1 className="text-4xl md:text-5xl font-serif font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -179,7 +149,7 @@ const Home = () => {
                 />
                 <Button
                   onClick={handleQuickChat}
-                  disabled={!quickInput.trim() || guestLoading}
+                  disabled={!quickInput.trim()}
                   className="h-14 px-6 rounded-2xl bg-gradient-calm hover:opacity-90 transition-opacity"
                 >
                   <Send className="w-5 h-5" />
@@ -187,45 +157,14 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Guest chat messages */}
-            {guestMessages.length > 0 && (
-              <div className="max-w-2xl w-full mt-6 space-y-3">
-                {guestMessages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <Card className={`max-w-[85%] p-3 ${msg.role === "user" ? "bg-gradient-calm text-white border-0" : "bg-card"}`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                    </Card>
-                  </div>
-                ))}
-                {guestLoading && (
-                  <div className="flex justify-start">
-                    <Card className="p-3 bg-card">
-                      <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-150" />
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-300" />
-                      </div>
-                    </Card>
-                  </div>
-                )}
-                {!user && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    <button onClick={() => navigate("/auth")} className="text-primary hover:underline">Sign in</button> to save your conversations and unlock all features.
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* Scroll indicator */}
-            {guestMessages.length === 0 && (
-              <button
-                onClick={scrollToTherapies}
-                className="absolute bottom-8 flex flex-col items-center gap-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors animate-bounce"
-              >
-                <span className="text-xs">Or choose a therapy type</span>
-                <ChevronDown className="w-5 h-5" />
-              </button>
-            )}
+            <button
+              onClick={scrollToTherapies}
+              className="absolute bottom-8 flex flex-col items-center gap-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors animate-bounce"
+            >
+              <span className="text-xs">Or choose a therapy type</span>
+              <ChevronDown className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Therapy types section */}

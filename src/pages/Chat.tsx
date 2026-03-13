@@ -5,11 +5,65 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Send, Volume2, VolumeX, Square, Play, PanelLeftClose, PanelLeft, Pause, Loader2 } from "lucide-react";
+import { Send, Volume2, VolumeX, Square, Play, PanelLeft, Pause, Loader2, FileText, Gamepad2, BookOpen, Newspaper, Sparkles, LogIn, X } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { PreSessionQuiz, QuizData } from "@/components/PreSessionQuiz";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Guest sidebar with locked features
+const GuestSidebar = ({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) => {
+  const navigate = useNavigate();
+
+  const handleLockedNav = (path: string) => {
+    navigate("/auth");
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onToggle} />
+      <aside className="fixed md:relative w-72 border-r border-border/50 bg-background/95 backdrop-blur-sm flex flex-col shrink-0 h-full animate-fade-in z-50">
+        <div className="p-4 border-b border-border/50 flex items-center justify-between">
+          <Logo size="sm" />
+          <Button variant="ghost" size="icon" onClick={onToggle}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-4 text-center text-muted-foreground text-sm">
+            <p className="text-xs mb-2">Sign in to save your sessions</p>
+          </div>
+        </ScrollArea>
+        <div className="p-3 border-t border-border/50 space-y-1 shrink-0">
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/report")}>
+            <FileText className="w-4 h-4" /> Monthly Report
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/activities")}>
+            <Gamepad2 className="w-4 h-4" /> Therapy Activities
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/diary")}>
+            <BookOpen className="w-4 h-4" /> My Diary
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/blog")}>
+            <Newspaper className="w-4 h-4" /> Healing Blog
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-9 text-amber-600 dark:text-amber-400 opacity-60" onClick={() => handleLockedNav("/chat?type=krishna_chat")}>
+            <Sparkles className="w-4 h-4" /> 🙏 Talk to Krishna
+          </Button>
+          <div className="pt-2 border-t border-border/30 mt-2">
+            <Button variant="default" className="w-full justify-start gap-2 h-9 bg-gradient-calm" onClick={() => navigate("/auth")}>
+              <LogIn className="w-4 h-4" /> Sign In
+            </Button>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};
 
 interface Message {
   role: "user" | "assistant";
@@ -53,13 +107,14 @@ const Chat = () => {
   const existingSessionId = searchParams.get("session");
   const skipQuizParam = searchParams.get("skipQuiz") === "true" || therapyType === "krishna_chat";
   const firstMessageParam = searchParams.get("firstMessage");
+  const isGuestMode = searchParams.get("guest") === "true";
   
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [showQuiz, setShowQuiz] = useState(!skipQuizParam);
+  const [showQuiz, setShowQuiz] = useState(!skipQuizParam && !isGuestMode);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [voiceGender, setVoiceGender] = useState<"male" | "female">("female");
@@ -92,6 +147,23 @@ const Chat = () => {
     ];
 
   useEffect(() => {
+    if (isGuestMode) {
+      // Guest mode: show greeting immediately, no auth needed
+      setShowQuiz(false);
+      const greeting: Message = {
+        role: "assistant",
+        content: therapyType === "krishna_chat"
+          ? `🙏 Hare Krishna, dear soul.\n\nI am here. Speak your heart — your joys, your sorrows, your questions about life.\n\nWhat weighs on your mind today?`
+          : `Hello! 🌿 I'm here to listen and support you. This is a safe space — feel free to share whatever is on your mind.\n\nHow are you feeling today?`
+      };
+      setMessages([greeting]);
+      if (firstMessageParam) {
+        // Auto-send the first message from the home page
+        handleGuestFirstMessage(greeting, firstMessageParam);
+      }
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");
@@ -103,12 +175,40 @@ const Chat = () => {
         if (existingSessionId) {
           loadExistingSession(existingSessionId);
         } else if (skipQuizParam) {
-          // Auto-initialize session without quiz
           initializeQuickSession(session.user.id);
         }
       }
     });
   }, [navigate, existingSessionId]);
+
+  const handleGuestFirstMessage = async (greeting: Message, msg: string) => {
+    const userMsg: Message = { role: "user", content: msg };
+    setMessages(prev => [...prev, userMsg]);
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("therapy-chat", {
+        body: {
+          sessionId: "guest-session",
+          therapyType,
+          isInitial: false,
+          messages: [greeting, userMsg],
+          quizData: null,
+          messageCount: 2,
+          voiceGender: "female",
+          userName: "",
+          isGuestMode: true,
+        },
+      });
+      if (error) throw error;
+      const reply: Message = { role: "assistant", content: data.message };
+      setMessages(prev => [...prev, reply]);
+      if (voiceEnabled) speakText(reply.content);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkProStatus = async (userId: string) => {
     const { data: profile } = await supabase
@@ -413,7 +513,6 @@ const Chat = () => {
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
     
-    // Stop any current audio first
     stopSpeaking();
     setIsLoadingVoice(true);
     setIsSpeaking(true);
@@ -421,6 +520,8 @@ const Chat = () => {
     
     try {
       const cleanedText = cleanTextForSpeech(text);
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
@@ -429,17 +530,21 @@ const Chat = () => {
           headers: {
             "Content-Type": "application/json",
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ text: cleanedText, voiceGender: voiceStyle || voiceGender }),
         }
       );
 
       if (!response.ok) {
+        const errText = await response.text();
+        console.error("TTS error response:", errText);
         throw new Error(`TTS request failed: ${response.status}`);
       }
 
       const audioBlob = await response.blob();
+      if (audioBlob.size === 0) throw new Error("Empty audio response");
+      
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
@@ -496,9 +601,39 @@ const Chat = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // Stop any ongoing speech when sending a new message
-    if (isSpeaking) {
-      stopSpeaking();
+    if (isSpeaking) stopSpeaking();
+
+    // Guest mode - ephemeral chat
+    if (isGuestMode) {
+      const userMessage: Message = { role: "user", content: input };
+      setMessages(prev => [...prev, userMessage]);
+      const currentInput = input;
+      setInput("");
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("therapy-chat", {
+          body: {
+            sessionId: "guest-session",
+            therapyType,
+            isInitial: false,
+            messages: [...messages, userMessage],
+            quizData: null,
+            messageCount: messages.length + 1,
+            voiceGender: voiceStyle || voiceGender,
+            userName: "",
+            isGuestMode: true,
+          },
+        });
+        if (error) throw error;
+        const reply: Message = { role: "assistant", content: data.message };
+        setMessages(prev => [...prev, reply]);
+        if (voiceEnabled) speakText(reply.content);
+      } catch (error: any) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
 
     // Check message limit for free users
@@ -520,7 +655,6 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      // Create session on first user message for Krishna chat (lazy creation)
       let currentSessionId = sessionId;
       if (!currentSessionId && user) {
         const { data: session, error: sessionError } = await supabase
@@ -538,7 +672,6 @@ const Chat = () => {
         currentSessionId = session.id;
         setSessionId(session.id);
 
-        // Save the initial greeting that was shown
         if (messages.length > 0 && messages[0].role === "assistant") {
           await supabase.from("therapy_messages").insert({
             session_id: session.id,
@@ -570,10 +703,7 @@ const Chat = () => {
 
       if (error) throw error;
 
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: data.message,
-      };
+      const assistantMessage: Message = { role: "assistant", content: data.message };
       setMessages((prev) => [...prev, assistantMessage]);
 
       await supabase.from("therapy_messages").insert({
@@ -582,21 +712,14 @@ const Chat = () => {
         content: data.message,
       });
 
-      // Update message count
       await supabase
         .from("therapy_sessions")
         .update({ message_count: messages.length + 2 })
         .eq("id", currentSessionId);
 
-      if (voiceEnabled) {
-        speakText(data.message);
-      }
+      if (voiceEnabled) speakText(data.message);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -618,9 +741,9 @@ const Chat = () => {
 
   const therapistName = getTherapistName(voiceStyle || voiceGender, voiceOptions);
 
-  if (!user) return null;
+  if (!user && !isGuestMode) return null;
 
-  if (showQuiz && !existingSessionId) {
+  if (showQuiz && !existingSessionId && user) {
     return (
       <PreSessionQuiz
         userId={user.id}
@@ -633,7 +756,11 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gradient-soft">
-      <AppSidebar userId={user.id} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
+      {user ? (
+        <AppSidebar userId={user.id} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
+      ) : (
+        <GuestSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
+      )}
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
