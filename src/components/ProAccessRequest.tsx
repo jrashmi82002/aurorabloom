@@ -185,7 +185,7 @@ export const ProAccessRequest = () => {
               <span className="px-2 py-1 bg-amber-500/20 rounded-full">Unlimited Sessions</span>
               <span className="px-2 py-1 bg-amber-500/20 rounded-full">Extra Activities</span>
               <span className="px-2 py-1 bg-amber-500/20 rounded-full">Diary Images</span>
-              <span className="px-2 py-1 bg-amber-500/20 rounded-full">8 AI Voices</span>
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Premium Voices</span>
             </div>
           </div>
         </CardContent>
