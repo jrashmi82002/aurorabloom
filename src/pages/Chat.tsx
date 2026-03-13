@@ -459,7 +459,6 @@ const Chat = () => {
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
     
-    // Stop any current audio first
     stopSpeaking();
     setIsLoadingVoice(true);
     setIsSpeaking(true);
@@ -467,6 +466,8 @@ const Chat = () => {
     
     try {
       const cleanedText = cleanTextForSpeech(text);
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
@@ -475,17 +476,21 @@ const Chat = () => {
           headers: {
             "Content-Type": "application/json",
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ text: cleanedText, voiceGender: voiceStyle || voiceGender }),
         }
       );
 
       if (!response.ok) {
+        const errText = await response.text();
+        console.error("TTS error response:", errText);
         throw new Error(`TTS request failed: ${response.status}`);
       }
 
       const audioBlob = await response.blob();
+      if (audioBlob.size === 0) throw new Error("Empty audio response");
+      
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
