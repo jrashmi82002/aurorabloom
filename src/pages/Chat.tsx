@@ -547,9 +547,39 @@ const Chat = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // Stop any ongoing speech when sending a new message
-    if (isSpeaking) {
-      stopSpeaking();
+    if (isSpeaking) stopSpeaking();
+
+    // Guest mode - ephemeral chat
+    if (isGuestMode) {
+      const userMessage: Message = { role: "user", content: input };
+      setMessages(prev => [...prev, userMessage]);
+      const currentInput = input;
+      setInput("");
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("therapy-chat", {
+          body: {
+            sessionId: "guest-session",
+            therapyType,
+            isInitial: false,
+            messages: [...messages, userMessage],
+            quizData: null,
+            messageCount: messages.length + 1,
+            voiceGender: voiceStyle || voiceGender,
+            userName: "",
+            isGuestMode: true,
+          },
+        });
+        if (error) throw error;
+        const reply: Message = { role: "assistant", content: data.message };
+        setMessages(prev => [...prev, reply]);
+        if (voiceEnabled) speakText(reply.content);
+      } catch (error: any) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
 
     // Check message limit for free users
@@ -571,7 +601,6 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      // Create session on first user message for Krishna chat (lazy creation)
       let currentSessionId = sessionId;
       if (!currentSessionId && user) {
         const { data: session, error: sessionError } = await supabase
@@ -589,7 +618,6 @@ const Chat = () => {
         currentSessionId = session.id;
         setSessionId(session.id);
 
-        // Save the initial greeting that was shown
         if (messages.length > 0 && messages[0].role === "assistant") {
           await supabase.from("therapy_messages").insert({
             session_id: session.id,
@@ -621,10 +649,7 @@ const Chat = () => {
 
       if (error) throw error;
 
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: data.message,
-      };
+      const assistantMessage: Message = { role: "assistant", content: data.message };
       setMessages((prev) => [...prev, assistantMessage]);
 
       await supabase.from("therapy_messages").insert({
@@ -633,21 +658,14 @@ const Chat = () => {
         content: data.message,
       });
 
-      // Update message count
       await supabase
         .from("therapy_sessions")
         .update({ message_count: messages.length + 2 })
         .eq("id", currentSessionId);
 
-      if (voiceEnabled) {
-        speakText(data.message);
-      }
+      if (voiceEnabled) speakText(data.message);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
