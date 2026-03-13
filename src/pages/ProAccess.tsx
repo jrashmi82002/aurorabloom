@@ -82,7 +82,7 @@ const ProAccess = () => {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500">✓</span>
-                <span><strong>8 AI Voices</strong> - Choose from a variety of therapy voices</span>
+                <span><strong>Premium Voices</strong> - Multiple therapy voice options</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500">✓</span>
