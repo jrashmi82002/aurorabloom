@@ -126,7 +126,7 @@ const Home = () => {
           </div>
 
           {/* Hero section with quick chat */}
-          <div className={`${guestMessages.length > 0 ? 'pt-12 pb-4' : 'min-h-[calc(100vh-73px)]'} flex flex-col items-center justify-center px-6 relative`}>
+          <div className="min-h-[calc(100vh-73px)] flex flex-col items-center justify-center px-6 relative">
             <div className="max-w-2xl w-full text-center space-y-8">
               <div className="space-y-3">
                 <h1 className="text-4xl md:text-5xl font-serif font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
