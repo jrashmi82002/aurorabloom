@@ -35,7 +35,6 @@ const Home = () => {
   const [displayedText, setDisplayedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
   const [guestMessages, setGuestMessages] = useState<{ role: string; content: string }[]>([]);
-  const [guestLoading, setGuestLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
