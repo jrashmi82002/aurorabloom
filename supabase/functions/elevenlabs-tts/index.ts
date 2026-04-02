@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,13 +8,13 @@ const corsHeaders = {
 
 // Voice mapping for all therapist personas
 const VOICE_MAP: Record<string, string> = {
-  maya: "EXAVITQu4vr4xnSDxMaL",        // Sarah - warm feminine
-  marcus: "onwK4e9ZLuTAKqWW03F9",       // Daniel - clear masculine
-  priya: "cgSgspJ2msm6clMCkdW9",        // Jessica - Indian modern feminine
-  arjun: "TX3LPaxmHKxFdv7VOQHJ",        // Liam - Indian masculine
-  eleanor: "Xb7hH8MSUJpSbSDYk0k2",      // Alice - British feminine
-  james: "JBFqnCBsd6RMkjVDRZzb",        // George - British masculine
-  krishna: "TX3LPaxmHKxFdv7VOQHJ",      // Calm soothing Indian male voice
+  maya: "EXAVITQu4vr4xnSDxMaL",
+  marcus: "onwK4e9ZLuTAKqWW03F9",
+  priya: "cgSgspJ2msm6clMCkdW9",
+  arjun: "TX3LPaxmHKxFdv7VOQHJ",
+  eleanor: "Xb7hH8MSUJpSbSDYk0k2",
+  james: "JBFqnCBsd6RMkjVDRZzb",
+  krishna: "TX3LPaxmHKxFdv7VOQHJ",
   female: "EXAVITQu4vr4xnSDxMaL",
   male: "onwK4e9ZLuTAKqWW03F9",
 };
@@ -24,6 +25,31 @@ serve(async (req) => {
   }
 
   try {
+    // ---- Authentication check ----
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    const supabase = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // ---- End authentication check ----
+
     const { text, voiceGender } = await req.json();
 
     if (!text || typeof text !== "string") {
