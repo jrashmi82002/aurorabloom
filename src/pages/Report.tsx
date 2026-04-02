@@ -4,9 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
-import { Logo } from "@/components/Logo";
 import { CalmingIllustration } from "@/components/CalmingIllustration";
-import { ArrowLeft, Calendar, MessageCircle, TrendingUp, Sparkles, Loader2, Heart, Target, Brain, Lightbulb, CheckCircle } from "lucide-react";
+import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileIcon } from "@/components/ProfileIcon";
+import { PanelLeft, Calendar, MessageCircle, TrendingUp, Sparkles, Loader2, Heart, Target, Brain, Lightbulb, CheckCircle, FileText } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
 interface MonthlyStats {
