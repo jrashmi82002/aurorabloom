@@ -680,7 +680,9 @@ const Report = () => {
             </CardContent>
           </Card>
         )}
+        </div>
       </main>
+      </div>
     </div>
   );
 };

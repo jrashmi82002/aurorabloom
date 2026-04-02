@@ -321,8 +321,8 @@ const Blog = () => {
                 <Newspaper className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-serif font-bold">Healing Blog</h1>
-                <p className="text-sm text-muted-foreground">Research-backed insights for your journey</p>
+                <h1 className="text-lg md:text-2xl font-serif font-bold truncate">Healing Blog</h1>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Research-backed insights for your journey</p>
               </div>
             </div>
             {selectedPost && (
