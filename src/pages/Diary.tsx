@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { PanelLeft, BookOpen, Sparkles, ChevronLeft, ChevronRight, Loader2, Image as ImageIcon, X, Crown, Download, FileText, Trash2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ const Diary = () => {
   const [pdfStartDate, setPdfStartDate] = useState("");
   const [pdfEndDate, setPdfEndDate] = useState("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -517,67 +519,82 @@ const Diary = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="max-w-5xl mx-auto grid md:grid-cols-[280px_1fr] gap-6">
-            {/* Calendar */}
-            <Card className={cn("border-green-200/50 bg-gradient-to-br", currentTheme.bg)}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <CardTitle className="text-sm font-medium">
-                    {format(currentMonth, "MMMM yyyy")}
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                  {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-                    <div key={i} className="text-muted-foreground font-medium py-1">{d}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {Array(startOfMonth(currentMonth).getDay()).fill(null).map((_, i) => (
-                    <div key={`empty-${i}`} />
-                  ))}
-                  {daysInMonth.map((day) => {
-                    const hasEntry = hasEntryOnDate(day);
-                    const isSelected = isSameDay(day, selectedDate);
-                    const isTodayDate = isToday(day);
-                    
-                    return (
-                      <button
-                        key={day.toISOString()}
-                        onClick={() => setSelectedDate(day)}
-                        className={cn(
-                          "aspect-square rounded-lg text-xs font-medium transition-all",
-                          "hover:bg-green-200/50 dark:hover:bg-green-800/30",
-                          isSelected && "bg-green-500 text-white hover:bg-green-600",
-                          !isSelected && isTodayDate && "ring-2 ring-green-400",
-                          hasEntry && !isSelected && "bg-green-100 dark:bg-green-900/30"
-                        )}
+          <div className="max-w-5xl mx-auto space-y-4">
+            {/* Calendar Dropdown */}
+            <Collapsible open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("w-full justify-between border-green-200/50 bg-gradient-to-br", currentTheme.bg)}
+                >
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    {format(selectedDate, "EEEE, MMMM d, yyyy")}
+                    {hasEntryOnDate(selectedDate) && <span className="w-2 h-2 rounded-full bg-green-500" />}
+                  </span>
+                  <ChevronRight className={cn("w-4 h-4 transition-transform", calendarOpen && "rotate-90")} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <Card className={cn("mt-2 border-green-200/50 bg-gradient-to-br", currentTheme.bg)}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
                       >
-                        {format(day, "d")}
-                        {hasEntry && !isSelected && (
-                          <span className="block w-1 h-1 rounded-full bg-green-500 mx-auto mt-0.5" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm font-medium">
+                        {format(currentMonth, "MMMM yyyy")}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                      {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                        <div key={i} className="text-muted-foreground font-medium py-1">{d}</div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {Array(startOfMonth(currentMonth).getDay()).fill(null).map((_, i) => (
+                        <div key={`empty-${i}`} />
+                      ))}
+                      {daysInMonth.map((day) => {
+                        const hasEntry = hasEntryOnDate(day);
+                        const isSelected = isSameDay(day, selectedDate);
+                        const isTodayDate = isToday(day);
+                        
+                        return (
+                          <button
+                            key={day.toISOString()}
+                            onClick={() => { setSelectedDate(day); setCalendarOpen(false); }}
+                            className={cn(
+                              "aspect-square rounded-lg text-xs font-medium transition-all",
+                              "hover:bg-green-200/50 dark:hover:bg-green-800/30",
+                              isSelected && "bg-green-500 text-white hover:bg-green-600",
+                              !isSelected && isTodayDate && "ring-2 ring-green-400",
+                              hasEntry && !isSelected && "bg-green-100 dark:bg-green-900/30"
+                            )}
+                          >
+                            {format(day, "d")}
+                            {hasEntry && !isSelected && (
+                              <span className="block w-1 h-1 rounded-full bg-green-500 mx-auto mt-0.5" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* Entry Area */}
             <div className="space-y-4">
@@ -615,15 +632,15 @@ const Diary = () => {
                         </p>
                       </div>
                     )}
-                    <div className="flex-1 min-w-[200px]">
-                      <p className="text-xs text-muted-foreground mb-2">How are you feeling?</p>
-                      <div className="flex flex-wrap gap-1">
+                    <div className="flex-1 min-w-[150px]">
+                      <p className="text-xs text-muted-foreground mb-1">How are you feeling?</p>
+                      <div className="flex flex-wrap gap-0.5">
                         {moodStickers.map(sticker => (
                           <button
                             key={sticker}
                             onClick={() => setSelectedSticker(selectedSticker === sticker ? null : sticker)}
                             className={cn(
-                              "text-lg p-1 rounded transition-transform hover:scale-110",
+                              "text-base p-0.5 rounded transition-transform hover:scale-110",
                               selectedSticker === sticker && "bg-green-100 dark:bg-green-900/50 scale-110"
                             )}
                           >
@@ -708,7 +725,7 @@ const Diary = () => {
                       {!isPro && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Crown className="w-4 h-4 text-amber-500" />
-                          <span>Pro members can add images to diary entries</span>
+                          <span>Pro members can add images to diary entries and download the whole diary</span>
                         </div>
                       )}
                       
