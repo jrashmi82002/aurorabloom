@@ -723,7 +723,7 @@ const Diary = () => {
                       {!isPro && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Crown className="w-4 h-4 text-amber-500" />
-                          <span>Pro members can add images to diary entries</span>
+                          <span>Pro members can add images to diary entries and download the whole diary</span>
                         </div>
                       )}
                       
