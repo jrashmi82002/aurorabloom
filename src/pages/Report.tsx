@@ -56,6 +56,7 @@ const Report = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MonthlyStats | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
