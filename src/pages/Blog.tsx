@@ -310,7 +310,7 @@ const Blog = () => {
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
-          <div className="px-6 py-4 flex items-center gap-4">
+          <div className="px-4 md:px-6 py-4 flex items-center gap-3 md:gap-4">
             {!sidebarOpen && (
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
                 <PanelLeft className="w-5 h-5" />
@@ -321,8 +321,8 @@ const Blog = () => {
                 <Newspaper className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-serif font-bold">Healing Blog</h1>
-                <p className="text-sm text-muted-foreground">Research-backed insights for your journey</p>
+                <h1 className="text-lg md:text-2xl font-serif font-bold truncate">Healing Blog</h1>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Research-backed insights for your journey</p>
               </div>
             </div>
             {selectedPost && (
