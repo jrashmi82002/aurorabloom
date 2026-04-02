@@ -630,15 +630,15 @@ const Diary = () => {
                         </p>
                       </div>
                     )}
-                    <div className="flex-1 min-w-[200px]">
-                      <p className="text-xs text-muted-foreground mb-2">How are you feeling?</p>
-                      <div className="flex flex-wrap gap-1">
+                    <div className="flex-1 min-w-[150px]">
+                      <p className="text-xs text-muted-foreground mb-1">How are you feeling?</p>
+                      <div className="flex flex-wrap gap-0.5">
                         {moodStickers.map(sticker => (
                           <button
                             key={sticker}
                             onClick={() => setSelectedSticker(selectedSticker === sticker ? null : sticker)}
                             className={cn(
-                              "text-lg p-1 rounded transition-transform hover:scale-110",
+                              "text-base p-0.5 rounded transition-transform hover:scale-110",
                               selectedSticker === sticker && "bg-green-100 dark:bg-green-900/50 scale-110"
                             )}
                           >
