@@ -394,21 +394,34 @@ const Report = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-soft">
-      <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <Logo size="sm" showText={false} />
-          <div className="flex-1">
-            <h1 className="text-xl font-serif font-semibold">Monthly Therapy Report</h1>
-            <p className="text-sm text-muted-foreground">Your complete journey at a glance</p>
+    <div className="h-screen flex overflow-hidden bg-gradient-soft">
+      <AppSidebar userId={user.id} isOpen={sidebarOpen} onToggle={() => setSidebarOpen(false)} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
+          <div className="px-4 md:px-6 py-4 flex items-center gap-3 md:gap-4">
+            {!sidebarOpen && (
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+                <PanelLeft className="w-5 h-5" />
+              </Button>
+            )}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg md:text-2xl font-serif font-bold truncate">Monthly Report</h1>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Your complete journey at a glance</p>
+              </div>
+            </div>
+            <NotificationBell />
+            <ThemeToggle />
+            <ProfileIcon />
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="max-w-4xl mx-auto">
         {/* Month Selector */}
         <div className="flex items-center justify-center gap-4 mb-8">
           <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
