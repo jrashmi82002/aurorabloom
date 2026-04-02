@@ -62,6 +62,7 @@ const Diary = () => {
   const [pdfStartDate, setPdfStartDate] = useState("");
   const [pdfEndDate, setPdfEndDate] = useState("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
