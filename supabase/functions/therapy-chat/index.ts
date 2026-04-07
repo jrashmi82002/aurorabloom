@@ -10,7 +10,7 @@ const corsHeaders = {
 const getTherapistName = (therapyType: string, voiceGender: string) => {
   if (therapyType === "krishna_chat") return "Krishna";
   if (therapyType === "yogic") return voiceGender === "female" ? "Jaya" : "Vishesh";
-  return voiceGender === "female" ? "Aurora" : "Marcus";
+  return voiceGender === "female" ? "Maya" : "Marcus";
 };
 
 const SAFETY_GUIDELINES = `
