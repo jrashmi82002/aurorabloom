@@ -470,9 +470,17 @@ serve(async (req) => {
     const promptFn = therapyPrompts[therapyType] || therapyPrompts.talk_therapy;
     let systemPrompt = promptFn(therapistName);
 
-    // Add user name context for Krishna chat
-    if (therapyType === "krishna_chat" && userName) {
-      systemPrompt += `\n\nThe user's name is "${userName}". ALWAYS address them by name with love and warmth.`;
+    // Add user name context
+    if (userName) {
+      if (therapyType === "krishna_chat") {
+        systemPrompt += `\n\nThe user's name is "${userName}". ALWAYS address them by name with love and warmth.`;
+      } else {
+        systemPrompt += `\n\nThe user's name is "${userName}". Use their name naturally in conversation sometimes, but don't overdo it. Mix it with casual terms like "buddy" or "friend".`;
+      }
+    } else {
+      if (therapyType !== "krishna_chat") {
+        systemPrompt += `\n\nYou don't know the user's name yet. Use casual terms like "hey", "buddy", "friend", "bro", or "mate". If they mention their name during the conversation, start using it naturally.`;
+      }
     }
 
     if (quizData) {
