@@ -477,9 +477,6 @@ const Chat = () => {
         content: data.message,
       });
 
-      if (voiceEnabled) {
-        speakText(data.message);
-      }
     } catch (error: any) {
       toast({
         title: "Error",
