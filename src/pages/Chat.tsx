@@ -376,9 +376,6 @@ const Chat = () => {
           .update({ message_count: 3 })
           .eq("id", session.id);
 
-        if (voiceEnabled) {
-          speakText(replyData.message);
-        }
         setLoading(false);
       }
     } catch (error: any) {
