@@ -745,7 +745,6 @@ const Chat = () => {
         .update({ message_count: messages.length + 2 })
         .eq("id", currentSessionId);
 
-      if (voiceEnabled) speakText(data.message);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
