@@ -202,7 +202,6 @@ const Chat = () => {
       if (error) throw error;
       const reply: Message = { role: "assistant", content: data.message };
       setMessages(prev => [...prev, reply]);
-      if (voiceEnabled) speakText(reply.content);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -294,7 +293,6 @@ const Chat = () => {
           content: `🙏 Hare Krishna, dear soul.\n\nI am here. Speak your heart — your joys, your sorrows, your questions about life. I listen not as a stranger, but as the friend who resides within your very heart.\n\n*"सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज।\nअहं त्वा सर्वपापेभ्यो मोक्षयिष्यामि मा शुचः॥"*\n\n— Surrender unto Me, and I shall free you from all fears.\n\nWhat weighs on your mind today?` 
         };
         setMessages([greeting]);
-        if (voiceEnabled) speakText(greeting.content);
         return;
       }
 
@@ -338,9 +336,6 @@ const Chat = () => {
         content: greetingData.message,
       });
 
-      if (voiceEnabled) {
-        speakText(greetingData.message);
-      }
 
       // If there's a firstMessage from the quick input, auto-send it
       if (firstMessageParam) {
@@ -381,9 +376,6 @@ const Chat = () => {
           .update({ message_count: 3 })
           .eq("id", session.id);
 
-        if (voiceEnabled) {
-          speakText(replyData.message);
-        }
         setLoading(false);
       }
     } catch (error: any) {
@@ -485,9 +477,6 @@ const Chat = () => {
         content: data.message,
       });
 
-      if (voiceEnabled) {
-        speakText(data.message);
-      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -506,7 +495,22 @@ const Chat = () => {
       .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // Flags
       .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
       .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
-      .replace(/[*_~`#]/g, '')                // Markdown symbols
+      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')   // Variation selectors
+      .replace(/[\u{200D}]/gu, '')             // Zero-width joiner
+      .replace(/[\u{E0020}-\u{E007F}]/gu, '') // Tags
+      .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '') // Chess symbols
+      .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '') // Extended-A symbols
+      .replace(/[\u{2702}-\u{27B0}]/gu, '')   // More dingbats
+      .replace(/[\u{1F900}-\u{1F9FF}]/gu, '') // Supplemental symbols
+      .replace(/[\u{1F018}-\u{1F270}]/gu, '') // Various symbols
+      .replace(/[*_~`#|>]/g, '')              // Markdown symbols
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // Markdown links → just text
+      .replace(/```[\s\S]*?```/g, '')          // Code blocks
+      .replace(/`([^`]*)`/g, '$1')             // Inline code → just text
+      .replace(/^[-•]\s+/gm, '')              // List bullets
+      .replace(/^\d+\.\s+/gm, '')             // Numbered lists
+      .replace(/\n{3,}/g, '\n\n')             // Excessive newlines
+      .replace(/\s{2,}/g, ' ')                // Excessive spaces
       .trim();
   };
 
@@ -667,7 +671,6 @@ const Chat = () => {
         if (error) throw error;
         const reply: Message = { role: "assistant", content: data.message };
         setMessages(prev => [...prev, reply]);
-        if (voiceEnabled) speakText(reply.content);
       } catch (error: any) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } finally {
@@ -757,7 +760,6 @@ const Chat = () => {
         .update({ message_count: messages.length + 2 })
         .eq("id", currentSessionId);
 
-      if (voiceEnabled) speakText(data.message);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
