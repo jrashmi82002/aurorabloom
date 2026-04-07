@@ -336,9 +336,6 @@ const Chat = () => {
         content: greetingData.message,
       });
 
-      if (voiceEnabled) {
-        speakText(greetingData.message);
-      }
 
       // If there's a firstMessage from the quick input, auto-send it
       if (firstMessageParam) {
