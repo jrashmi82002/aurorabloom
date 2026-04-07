@@ -656,7 +656,6 @@ const Chat = () => {
         if (error) throw error;
         const reply: Message = { role: "assistant", content: data.message };
         setMessages(prev => [...prev, reply]);
-        if (voiceEnabled) speakText(reply.content);
       } catch (error: any) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } finally {
