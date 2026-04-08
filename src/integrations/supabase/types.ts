@@ -317,6 +317,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_update_own_profile: {
+        Args: {
+          _daily_message_count: number
+          _daily_session_count: number
+          _last_message_date: string
+          _last_session_date: string
+          _pro_subscription_ends_at: string
+          _pro_subscription_status: string
+          _profile_id: string
+          _session_cooldown_until: string
+          _stripe_customer_id: string
+          _stripe_subscription_id: string
+        }
+        Returns: boolean
+      }
       can_user_send_message: {
         Args: { user_id_param: string }
         Returns: boolean
