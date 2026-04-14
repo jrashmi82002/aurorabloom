@@ -65,6 +65,8 @@ export const MyPersona = () => {
 
       const storedMbti = localStorage.getItem(`mbti_result_${user.id}`);
 
+      const hasEnoughData = totalMessages >= 10;
+
       const prompt = `You are a thoughtful, poetic personality analyst. Based on this person's therapy journey, create a beautiful, detailed persona reflection.
 
 User Data:
@@ -81,7 +83,7 @@ Write a warm, beautifully themed persona reflection (300-400 words) that covers:
 2. **Their strengths** - Highlight key character strengths like bravery, curiosity, kindness, resilience, empathy. Be specific and affirming.
 3. **Their growth pattern** - How they approach healing and self-improvement
 4. **Their emotional landscape** - The feelings they navigate and how they handle them
-5. **A character they remind you of** - From movies, anime, literature, or mythology (explain why). Examples: Naruto (resilience), Arjuna (seeking answers), Hermione (wisdom), Totoro (gentle strength).
+${hasEnoughData ? `5. **A character they remind you of** - From movies, anime, literature, or mythology. CRITICAL: Choose a character that is culturally relevant to the user. Analyze their language, name, and writing style to determine where they might be from. If they seem Indian, use characters from Indian mythology (Arjuna, Draupadi, Sita, Hanuman), Bollywood, or Indian literature. If they seem East Asian, use anime/manga characters. If Western, use Western literature/movies. NEVER default to "Elizabeth Bennet" or any single character for everyone. Each person must get a UNIQUE character based on their actual personality traits and cultural background. Explain why this character fits them specifically.` : `5. **Emerging personality hints** - Share 2-3 intriguing observations about their personality that are starting to emerge. Say something like "As we get to know you better, I sense..." or "There's a quiet strength forming...". Do NOT assign any fictional character yet — you need to understand them deeper first. Tease that a character match is coming as they share more of themselves.`}
 6. **A gentle insight** - Something meaningful about their soul that they might not see themselves
 ${storedMbti ? `7. **Their MBTI (${storedMbti})** - Weave their personality type into the reflection naturally, explaining how it manifests in their journey.` : ""}
 
@@ -92,6 +94,8 @@ CRITICAL INSTRUCTION: You MUST write a full 300-400 word reflection NO MATTER WH
 - Emotionally intelligent (willing to examine feelings)
 - Resilient (showing up for themselves)
 NEVER say "we don't know much about you" or "not enough data" or anything dismissive. ALWAYS provide a full, beautiful, affirming reflection.
+
+CRITICAL: NEVER give the same character to everyone. Each reflection must be deeply personalized based on the user's actual words, moods, therapy choices, and cultural context.
 
 Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use metaphors. Make them feel truly seen and understood. Include a relevant quote from Bhagavad Gita.`;
 
