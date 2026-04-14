@@ -35,13 +35,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [suggestedUsername, setSuggestedUsername] = useState("");
-  const [ageGroup, setAgeGroup] = useState("");
-  const [genderIdentity, setGenderIdentity] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [signupStep, setSignupStep] = useState(1);
   const navigate = useNavigate();
   const { toast } = useToast();
 
