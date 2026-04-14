@@ -152,6 +152,12 @@ const Diary = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    const MAX_SIZE_MB = 5;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast({ title: "File too large", description: `Please upload an image under ${MAX_SIZE_MB}MB`, variant: "destructive" });
+      return;
+    }
+
     setUploadingImage(true);
     try {
       const fileExt = file.name.split('.').pop();
