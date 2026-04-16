@@ -559,7 +559,7 @@ const Activities = () => {
 
   const dancePoses = ["🕺", "💃", "🙏", "🤲", "🙌", "👐", "🤸", "🧘"];
 
-  const activities = [
+  const allActivities = [
     { id: "breathing", title: "Mindful Breathing", description: "Guided 4-4-6 breathing exercise", icon: Wind, color: "from-blue-400 to-cyan-500" },
     { id: "drawing", title: "Expressive Canvas", description: "Free drawing to express emotions", icon: Palette, color: "from-purple-400 to-pink-500" },
     { id: "affirmations", title: "Daily Affirmations", description: "Positive affirmations for inner peace", icon: Sparkles, color: "from-amber-400 to-orange-500" },
@@ -568,17 +568,12 @@ const Activities = () => {
     { id: "memory", title: "Memory Match", description: "Relaxing memory card game", icon: Puzzle, color: "from-rose-400 to-pink-500" },
     { id: "gita", title: "Gita Wisdom", description: "Sacred verses with healing stories", icon: BookOpen, color: "from-orange-400 to-amber-500" },
     { id: "meditation", title: "Meditation", description: "Guided meditation with calming sounds", icon: Moon, color: "from-purple-400 to-indigo-500" },
+    { id: "bhajan", title: "Krishna Bhajan Dance", description: "Dance to divine Krishna bhajans", icon: Music2, color: "from-amber-400 to-yellow-500" },
+    { id: "focus", title: "Focus Timer", description: "Pomodoro-style focus sessions", icon: Timer, color: "from-teal-400 to-cyan-500" },
+    { id: "gratitude", title: "Gratitude Journal", description: "Daily gratitude reflection", icon: Brain, color: "from-yellow-400 to-amber-500" },
+    { id: "illusions", title: "Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600" },
+    { id: "mbti", title: "Personality Quiz", description: "Discover your MBTI personality type", icon: UserCircle, color: "from-pink-400 to-rose-600" },
   ];
-
-  const proActivities = [
-    { id: "bhajan", title: "Krishna Bhajan Dance", description: "Dance to divine Krishna bhajans", icon: Music2, color: "from-amber-400 to-yellow-500", isPro: true },
-    { id: "focus", title: "Focus Timer", description: "Pomodoro-style focus sessions", icon: Timer, color: "from-teal-400 to-cyan-500", isPro: true },
-    { id: "gratitude", title: "Gratitude Journal", description: "Daily gratitude reflection", icon: Brain, color: "from-yellow-400 to-amber-500", isPro: true },
-    { id: "illusions", title: "Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600", isPro: true },
-    { id: "mbti", title: "Personality Quiz", description: "Discover your MBTI personality type", icon: UserCircle, color: "from-pink-400 to-rose-600", isPro: true },
-  ];
-
-  const allActivities = isPro ? [...activities, ...proActivities] : activities;
 
   const affirmations = [
     "I am worthy of love and happiness",
@@ -652,18 +647,12 @@ const Activities = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {allActivities.map((activity) => {
                     const Icon = activity.icon;
-                    const isProActivity = 'isPro' in activity && activity.isPro;
                     return (
                       <Card
                         key={activity.id}
                         className="group hover:shadow-calm transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 relative"
                         onClick={() => setActiveGame(activity.id)}
                       >
-                        {isProActivity && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <Crown className="w-5 h-5 text-amber-500" />
-                          </div>
-                        )}
                         <CardHeader className="space-y-3">
                           <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${activity.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
                             <Icon className="w-6 h-6 text-white" />
@@ -678,20 +667,6 @@ const Activities = () => {
                     );
                   })}
                 </div>
-                {!isPro && (
-                  <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 p-4">
-                    <div className="flex items-start gap-3">
-                      <Crown className="w-6 h-6 text-amber-500 shrink-0" />
-                      <div>
-                        <p className="font-medium">Unlock More with Pro!</p>
-                        <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                          <li>🎶 Krishna Bhajan Dance · 🌙 Meditation · ⏱️ Focus Timer</li>
-                          <li>🙏 Gratitude Journal · 🌀 Illusions · 🧠 Personality Quiz</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-                )}
               </div>
             ) : (
               <div className="space-y-4">

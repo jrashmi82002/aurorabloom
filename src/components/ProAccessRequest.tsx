@@ -178,14 +178,14 @@ export const ProAccessRequest = () => {
             <div>
               <h3 className="text-xl font-semibold mb-2">You're a Pro Member! 🎉</h3>
               <p className="text-muted-foreground">
-                Enjoy unlimited messages, enhanced diary features, 4 extra therapy activities, and all premium features.
+                Enjoy unlimited chat credits, diary themes, image uploads, and PDF export.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2 text-xs">
-              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Unlimited Sessions</span>
-              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Extra Activities</span>
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Unlimited Chat</span>
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Diary Themes</span>
               <span className="px-2 py-1 bg-amber-500/20 rounded-full">Diary Images</span>
-              <span className="px-2 py-1 bg-amber-500/20 rounded-full">Premium Voices</span>
+              <span className="px-2 py-1 bg-amber-500/20 rounded-full">PDF Export</span>
             </div>
           </div>
         </CardContent>
