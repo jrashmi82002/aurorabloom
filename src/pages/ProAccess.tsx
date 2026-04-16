@@ -74,27 +74,19 @@ const ProAccess = () => {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
                 <span className="text-amber-500">✓</span>
-                <span><strong>Unlimited Therapy Sessions</strong> - No daily limits on sessions</span>
+                <span><strong>Unlimited Chat Credits</strong> - No daily limits on messages or sessions</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500">✓</span>
-                <span><strong>Unlimited Messages</strong> - Chat as much as you need</span>
+                <span><strong>Diary Themes</strong> - Beautiful custom themes for your diary entries</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500">✓</span>
-                <span><strong>Premium Voices</strong> - Multiple therapy voice options</span>
+                <span><strong>Diary Image Uploads</strong> - Add images to your diary entries</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-500">✓</span>
-                <span><strong>Enhanced Diary</strong> - Add images and mood stickers</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500">✓</span>
-                <span><strong>Extra Activities</strong> - Gita Wisdom, Yoga Poses & more</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500">✓</span>
-                <span><strong>PDF Export</strong> - Download your diary entries</span>
+                <span><strong>PDF Export</strong> - Download your diary entries as PDF</span>
               </li>
             </ul>
           </div>

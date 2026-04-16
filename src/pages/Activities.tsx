@@ -647,18 +647,12 @@ const Activities = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {allActivities.map((activity) => {
                     const Icon = activity.icon;
-                    const isProActivity = 'isPro' in activity && activity.isPro;
                     return (
                       <Card
                         key={activity.id}
                         className="group hover:shadow-calm transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 relative"
                         onClick={() => setActiveGame(activity.id)}
                       >
-                        {isProActivity && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <Crown className="w-5 h-5 text-amber-500" />
-                          </div>
-                        )}
                         <CardHeader className="space-y-3">
                           <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${activity.color} flex items-center justify-center transition-transform group-hover:scale-110`}>
                             <Icon className="w-6 h-6 text-white" />
@@ -673,20 +667,6 @@ const Activities = () => {
                     );
                   })}
                 </div>
-                {!isPro && (
-                  <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 p-4">
-                    <div className="flex items-start gap-3">
-                      <Crown className="w-6 h-6 text-amber-500 shrink-0" />
-                      <div>
-                        <p className="font-medium">Unlock More with Pro!</p>
-                        <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                          <li>🎶 Krishna Bhajan Dance · 🌙 Meditation · ⏱️ Focus Timer</li>
-                          <li>🙏 Gratitude Journal · 🌀 Illusions · 🧠 Personality Quiz</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-                )}
               </div>
             ) : (
               <div className="space-y-4">
