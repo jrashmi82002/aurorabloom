@@ -126,7 +126,7 @@ const Chat = () => {
   const [isPro, setIsPro] = useState(false);
   const [isLoadingVoice, setIsLoadingVoice] = useState(false);
   const [userName, setUserName] = useState<string>("");
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null); // kept for future use
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
