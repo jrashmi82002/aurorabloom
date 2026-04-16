@@ -131,17 +131,10 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Voice options - Krishna chat gets only Krishna voice
+  // Voice options - Krishna chat gets only Krishna voice, everyone gets 2 voices
   const voiceOptions = therapyType === "krishna_chat" 
     ? [{ value: "krishna", label: "Krishna", gender: "male" }]
-    : isPro ? [
-      { value: "maya", label: "Maya", gender: "female" },
-      { value: "marcus", label: "Marcus", gender: "male" },
-      { value: "priya", label: "Priya 🇮🇳", gender: "female" },
-      { value: "arjun", label: "Arjun 🇮🇳", gender: "male" },
-      { value: "eleanor", label: "Eleanor 🇬🇧", gender: "female" },
-      { value: "james", label: "James 🇬🇧", gender: "male" },
-    ] : [
+    : [
       { value: "maya", label: "Maya", gender: "female" },
       { value: "marcus", label: "Marcus", gender: "male" },
     ];
@@ -486,7 +479,7 @@ const Chat = () => {
     }
   };
 
-  // Clean text for speech - remove emojis and symbols
+  // Clean text for speech - remove emojis, symbols, markdown, and punctuation artifacts
   const cleanTextForSpeech = (text: string): string => {
     return text
       .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
@@ -509,134 +502,87 @@ const Chat = () => {
       .replace(/`([^`]*)`/g, '$1')             // Inline code → just text
       .replace(/^[-•]\s+/gm, '')              // List bullets
       .replace(/^\d+\.\s+/gm, '')             // Numbered lists
+      .replace(/[""\u201C\u201D]/g, '')        // Curly/smart quotes
+      .replace(/[''\u2018\u2019]/g, '')        // Smart single quotes
+      .replace(/[—–]/g, ' ')                  // Em/en dashes to space
+      .replace(/\.{3,}/g, ', ')               // Ellipsis to pause
+      .replace(/[()[\]{}]/g, '')              // Brackets
       .replace(/\n{3,}/g, '\n\n')             // Excessive newlines
       .replace(/\s{2,}/g, ' ')                // Excessive spaces
       .trim();
   };
 
-  // Browser-native TTS fallback
-  const speakWithBrowserTTS = (text: string) => {
+  // Browser-native TTS with male/female voice selection
+  const speakText = (text: string) => {
+    if (!voiceEnabled) return;
+    
+    stopSpeaking();
+    setIsSpeaking(true);
+    setIsPaused(false);
+    setIsLoadingVoice(false);
+    
+    const cleanedText = cleanTextForSpeech(text);
     const synth = window.speechSynthesis;
     synth.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
     utterance.rate = 0.9;
     utterance.pitch = 1.0;
     
-    // Try to pick a good voice
+    // Pick voice based on gender
+    const isMaleVoice = voiceStyle === "marcus" || voiceStyle === "krishna" || voiceGender === "male";
     const voices = synth.getVoices();
-    const preferred = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('google')) 
-      || voices.find(v => v.lang.startsWith('en') && !v.localService)
-      || voices.find(v => v.lang.startsWith('en'))
-      || voices[0];
-    if (preferred) utterance.voice = preferred;
+    
+    const pickVoice = () => {
+      const available = synth.getVoices();
+      if (available.length === 0) return;
+      
+      // Try to find a matching gender voice
+      const genderKeywords = isMaleVoice ? ['male', 'david', 'james', 'daniel', 'mark'] : ['female', 'samantha', 'karen', 'zira', 'victoria'];
+      const preferred = available.find(v => v.lang.startsWith('en') && genderKeywords.some(k => v.name.toLowerCase().includes(k)))
+        || available.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('google'))
+        || available.find(v => v.lang.startsWith('en') && !v.localService)
+        || available.find(v => v.lang.startsWith('en'))
+        || available[0];
+      if (preferred) utterance.voice = preferred;
+      
+      synth.speak(utterance);
+    };
     
     utterance.onend = () => {
       setIsSpeaking(false);
       setIsPaused(false);
-      setIsLoadingVoice(false);
     };
     utterance.onerror = () => {
       setIsSpeaking(false);
       setIsPaused(false);
-      setIsLoadingVoice(false);
     };
     
-    setIsLoadingVoice(false);
-    synth.speak(utterance);
-  };
-
-  const speakText = async (text: string) => {
-    if (!voiceEnabled) return;
-    
-    stopSpeaking();
-    setIsLoadingVoice(true);
-    setIsSpeaking(true);
-    setIsPaused(false);
-    
-    const cleanedText = cleanTextForSpeech(text);
-    
-    try {
-      const session = await supabase.auth.getSession();
-      const token = session?.data?.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ text: cleanedText, voiceGender: voiceStyle || voiceGender }),
-        }
-      );
-
-      if (!response.ok) {
-        console.warn("ElevenLabs TTS failed, falling back to browser TTS");
-        speakWithBrowserTTS(cleanedText);
-        return;
-      }
-
-      const audioBlob = await response.blob();
-      if (audioBlob.size === 0) {
-        speakWithBrowserTTS(cleanedText);
-        return;
-      }
-      
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      
-      audio.onended = () => {
-        setIsSpeaking(false);
-        setIsPaused(false);
-        setIsLoadingVoice(false);
-        audioRef.current = null;
-        URL.revokeObjectURL(audioUrl);
-      };
-      audio.onerror = () => {
-        setIsSpeaking(false);
-        setIsPaused(false);
-        setIsLoadingVoice(false);
-        audioRef.current = null;
-        URL.revokeObjectURL(audioUrl);
-      };
-      
-      await audio.play();
-      setIsLoadingVoice(false);
-    } catch (error) {
-      console.warn("ElevenLabs TTS error, using browser fallback:", error);
-      speakWithBrowserTTS(cleanedText);
+    // Voices may not be loaded yet
+    if (voices.length === 0) {
+      synth.onvoiceschanged = () => pickVoice();
+      // Fallback if event doesn't fire
+      setTimeout(() => { if (!synth.speaking) pickVoice(); }, 200);
+    } else {
+      pickVoice();
     }
   };
 
   const pauseSpeaking = () => {
-    if (audioRef.current && !audioRef.current.paused) {
-      audioRef.current.pause();
-      setIsPaused(true);
-    } else if (window.speechSynthesis.speaking) {
+    if (window.speechSynthesis.speaking) {
       window.speechSynthesis.pause();
       setIsPaused(true);
     }
   };
 
   const resumeSpeaking = () => {
-    if (audioRef.current && audioRef.current.paused) {
-      audioRef.current.play();
-      setIsPaused(false);
-    } else if (window.speechSynthesis.paused) {
+    if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
       setIsPaused(false);
     }
   };
 
   const stopSpeaking = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setIsPaused(false);
