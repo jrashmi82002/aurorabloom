@@ -22,10 +22,24 @@ export interface QuizData {
   genderIdentity: string;
   currentMood: number;
   stressLevel: number;
+  energyLevel: number;
+  sleepQuality: number;
+  socialConnection: number;
   therapyGoals: string[];
   previousExperience: string;
   customNotes: string;
   specificConcerns: string[];
+  // Personality dimensions (Big-Five inspired, 1-10 sliders)
+  personality: {
+    introversion: number;        // 1 extrovert ↔ 10 introvert
+    emotionality: number;        // 1 calm ↔ 10 highly sensitive
+    openness: number;            // 1 traditional ↔ 10 explorer
+    conscientiousness: number;   // 1 spontaneous ↔ 10 structured
+    agreeableness: number;       // 1 competitive ↔ 10 harmonious
+  };
+  copingStyle: string;           // how they typically deal with stress
+  decisionStyle: string;         // logic vs feeling
+  energySource: string;          // alone vs people
 }
 
 const experienceOptions = [

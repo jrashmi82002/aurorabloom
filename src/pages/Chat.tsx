@@ -593,8 +593,17 @@ const Chat = () => {
 
     if (isSpeaking) stopSpeaking();
 
-    // Guest mode - ephemeral chat
+    // Guest mode - ephemeral chat with 5-message cap
     if (isGuestMode) {
+      const userMsgCount = messages.filter(m => m.role === "user").length;
+      if (userMsgCount >= 5) {
+        toast({
+          title: "Sign in to keep chatting 💛",
+          description: "You've reached the 5-message guest limit. Sign in (or create a free account) to continue and save your progress.",
+        });
+        navigate("/auth");
+        return;
+      }
       const userMessage: Message = { role: "user", content: input };
       setMessages(prev => [...prev, userMessage]);
       const currentInput = input;
@@ -617,6 +626,16 @@ const Chat = () => {
         if (error) throw error;
         const reply: Message = { role: "assistant", content: data.message };
         setMessages(prev => [...prev, reply]);
+
+        // After the 5th user message, prompt signup softly
+        if (userMsgCount + 1 === 5) {
+          setTimeout(() => {
+            toast({
+              title: "Loving the conversation? ✨",
+              description: "Sign in to save this chat and unlock unlimited sessions.",
+            });
+          }, 1500);
+        }
       } catch (error: any) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } finally {
