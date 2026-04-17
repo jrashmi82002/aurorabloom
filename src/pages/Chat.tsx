@@ -407,15 +407,25 @@ const Chat = () => {
         .single();
 
       if (quizResponse) {
+        const scales = (quizResponse.current_mood_scales as any) || {};
         setQuizData({
           ageGroup: quizResponse.age_group || "",
           genderIdentity: quizResponse.gender_identity || "",
-          currentMood: (quizResponse.current_mood_scales as any)?.mood || 5,
-          stressLevel: (quizResponse.current_mood_scales as any)?.stress || 5,
+          currentMood: scales.mood ?? 5,
+          stressLevel: scales.stress ?? 5,
+          energyLevel: scales.energy ?? 5,
+          sleepQuality: scales.sleep ?? 5,
+          socialConnection: scales.social ?? 5,
           therapyGoals: quizResponse.therapy_goals || [],
           previousExperience: quizResponse.previous_experience || "",
           customNotes: quizResponse.custom_notes || "",
           specificConcerns: [],
+          personality: scales.personality ?? {
+            introversion: 5, emotionality: 5, openness: 5, conscientiousness: 5, agreeableness: 5,
+          },
+          copingStyle: scales.copingStyle ?? "",
+          decisionStyle: scales.decisionStyle ?? "",
+          energySource: scales.energySource ?? "",
         });
       }
 

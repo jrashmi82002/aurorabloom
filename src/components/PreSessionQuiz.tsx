@@ -308,10 +308,23 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
     genderIdentity: "",
     currentMood: 5,
     stressLevel: 5,
+    energyLevel: 5,
+    sleepQuality: 5,
+    socialConnection: 5,
     therapyGoals: [],
     previousExperience: "",
     customNotes: "",
     specificConcerns: [],
+    personality: {
+      introversion: 5,
+      emotionality: 5,
+      openness: 5,
+      conscientiousness: 5,
+      agreeableness: 5,
+    },
+    copingStyle: "",
+    decisionStyle: "",
+    energySource: "",
   });
 
   // Load existing profile data
