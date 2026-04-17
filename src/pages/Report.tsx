@@ -323,6 +323,7 @@ const Report = () => {
     return parts.join(" ");
   };
 
+  const generateInsights = (
     sessions: number,
     messages: number,
     typeCounts: Record<string, number>,
