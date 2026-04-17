@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Logo } from "@/components/Logo";
 import { Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { validateRealEmail } from "@/lib/emailValidation";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -130,10 +131,22 @@ const Auth = () => {
           return;
         }
 
-        if (password.length < 6) {
+        if (password.length < 8) {
           toast({
             title: "Weak Password",
-            description: "Password must be at least 6 characters long",
+            description: "Password must be at least 8 characters long",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Validate that the email looks real (block test@test.com, mailinator, etc.)
+        const emailCheck = validateRealEmail(email);
+        if (!emailCheck.valid) {
+          toast({
+            title: "Invalid Email",
+            description: emailCheck.reason,
             variant: "destructive",
           });
           setLoading(false);
@@ -165,8 +178,8 @@ const Auth = () => {
         }
 
         toast({
-          title: "Account Created! 🎉",
-          description: `Welcome! Your username is @${autoUsername}. You can change it in Profile Settings.`,
+          title: "Check Your Email 📧",
+          description: `We sent a confirmation link to ${email}. Please verify before signing in. Your username will be @${autoUsername}.`,
         });
         
         setIsLogin(true);
