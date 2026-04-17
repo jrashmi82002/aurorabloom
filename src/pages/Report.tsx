@@ -296,7 +296,33 @@ const Report = () => {
     return items.slice(0, 5); // Max 5 action items
   };
 
-  const generateInsights = (
+  const generateGrowthNarrative = (
+    deltas: { sessions: number; messages: number; mood: number; stress: number },
+    prev: any,
+    avgMood: number,
+    avgStress: number,
+    sessions: number,
+    messages: number,
+  ): string => {
+    if (!prev) {
+      return `This is your first tracked month — a baseline of ${sessions} session${sessions !== 1 ? "s" : ""} and ${messages} exchanges. Next month, we'll show how far you've grown from here. 🌱`;
+    }
+    const parts: string[] = [];
+    if (deltas.mood > 0.3) parts.push(`Your average mood lifted by **+${deltas.mood}** points compared to last month — real, measurable improvement. 🌤`);
+    else if (deltas.mood < -0.3) parts.push(`Your mood dipped by **${deltas.mood}** points vs last month. That's data, not failure — let's lean in this month. 💛`);
+    else parts.push(`Mood held steady within ±0.3 of last month — a sign of emotional regulation. 🪨`);
+
+    if (deltas.sessions > 0) parts.push(`You showed up **${deltas.sessions} more time${deltas.sessions !== 1 ? "s" : ""}** this month. Consistency compounds.`);
+    else if (deltas.sessions < 0) parts.push(`You had **${Math.abs(deltas.sessions)} fewer session${Math.abs(deltas.sessions) !== 1 ? "s" : ""}** than last month — quality over quantity also counts.`);
+
+    if (deltas.messages > 50) parts.push(`Your reflection volume grew by ${deltas.messages} messages — you're going deeper.`);
+
+    if (prev.dominant_themes && prev.dominant_themes.length > 0) {
+      parts.push(`Last month's themes: *${prev.dominant_themes.slice(0, 2).join(", ")}*. See how today's focus has shifted.`);
+    }
+    return parts.join(" ");
+  };
+
     sessions: number,
     messages: number,
     typeCounts: Record<string, number>,
