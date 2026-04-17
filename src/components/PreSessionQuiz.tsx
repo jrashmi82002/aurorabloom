@@ -430,42 +430,32 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
 
         <CardContent className="space-y-6">
           {step === 1 && (
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <Label>{therapyContent.moodLabel} (1-10)</Label>
-                <div className="px-2">
-                  <Slider
-                    value={[quizData.currentMood]}
-                    onValueChange={([v]) => setQuizData({ ...quizData, currentMood: v })}
-                    min={1}
-                    max={10}
-                    step={1}
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                    <span>😔 Low</span>
-                    <span className="font-medium text-foreground">{quizData.currentMood}</span>
-                    <span>Great 😊</span>
+            <div className="space-y-6">
+              {[
+                { key: "currentMood", label: therapyContent.moodLabel, low: "😔 Low", high: "Great 😊" },
+                { key: "stressLevel", label: therapyContent.stressLabel, low: "🧘 Low", high: "High 😰" },
+                { key: "energyLevel", label: "How is your energy today?", low: "😴 Drained", high: "Energized ⚡" },
+                { key: "sleepQuality", label: "How well did you sleep recently?", low: "😵 Poorly", high: "Restful 🌙" },
+                { key: "socialConnection", label: "How socially connected do you feel?", low: "🏝 Isolated", high: "Connected 🤝" },
+              ].map(({ key, label, low, high }) => (
+                <div key={key} className="space-y-2">
+                  <Label className="text-sm">{label} (1-10)</Label>
+                  <div className="px-2">
+                    <Slider
+                      value={[(quizData as any)[key]]}
+                      onValueChange={([v]) => setQuizData({ ...quizData, [key]: v } as QuizData)}
+                      min={1}
+                      max={10}
+                      step={1}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>{low}</span>
+                      <span className="font-medium text-foreground">{(quizData as any)[key]}</span>
+                      <span>{high}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <Label>{therapyContent.stressLabel} (1-10)</Label>
-                <div className="px-2">
-                  <Slider
-                    value={[quizData.stressLevel]}
-                    onValueChange={([v]) => setQuizData({ ...quizData, stressLevel: v })}
-                    min={1}
-                    max={10}
-                    step={1}
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                    <span>🧘 Low</span>
-                    <span className="font-medium text-foreground">{quizData.stressLevel}</span>
-                    <span>High 😰</span>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           )}
 
@@ -533,6 +523,107 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
           )}
 
           {step === 5 && (
+            <div className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                These help us understand your personality. Slide to where you feel you sit.
+              </p>
+              {[
+                { key: "introversion", label: "Energy style", low: "Outgoing", high: "Reflective" },
+                { key: "emotionality", label: "Emotional sensitivity", low: "Even-keeled", high: "Deeply feeling" },
+                { key: "openness", label: "Approach to new ideas", low: "Traditional", high: "Curious explorer" },
+                { key: "conscientiousness", label: "How you organize life", low: "Spontaneous", high: "Structured" },
+                { key: "agreeableness", label: "In conflicts", low: "Direct/competitive", high: "Harmony-seeking" },
+              ].map(({ key, label, low, high }) => (
+                <div key={key} className="space-y-2">
+                  <Label className="text-sm">{label}</Label>
+                  <div className="px-2">
+                    <Slider
+                      value={[(quizData.personality as any)[key]]}
+                      onValueChange={([v]) => setQuizData({
+                        ...quizData,
+                        personality: { ...quizData.personality, [key]: v },
+                      })}
+                      min={1}
+                      max={10}
+                      step={1}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>{low}</span>
+                      <span className="font-medium text-foreground">{(quizData.personality as any)[key]}</span>
+                      <span>{high}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {step === 6 && (
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <Label>When stressed, what helps you most?</Label>
+                <RadioGroup
+                  value={quizData.copingStyle}
+                  onValueChange={(v) => setQuizData({ ...quizData, copingStyle: v })}
+                >
+                  {[
+                    { v: "talk", l: "Talking it out with someone" },
+                    { v: "alone", l: "Time alone to process" },
+                    { v: "active", l: "Physical activity / movement" },
+                    { v: "create", l: "Creative outlets (music/art/writing)" },
+                    { v: "distract", l: "Distraction (shows / games / scrolling)" },
+                  ].map(o => (
+                    <div key={o.v} className="flex items-center space-x-2">
+                      <RadioGroupItem value={o.v} id={`cope-${o.v}`} />
+                      <Label htmlFor={`cope-${o.v}`} className="cursor-pointer text-sm">{o.l}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>How do you usually make important decisions?</Label>
+                <RadioGroup
+                  value={quizData.decisionStyle}
+                  onValueChange={(v) => setQuizData({ ...quizData, decisionStyle: v })}
+                >
+                  {[
+                    { v: "logic", l: "Mostly with logic & analysis" },
+                    { v: "feeling", l: "Mostly by what feels right" },
+                    { v: "balanced", l: "A balance of both" },
+                    { v: "advice", l: "I lean on others' advice" },
+                  ].map(o => (
+                    <div key={o.v} className="flex items-center space-x-2">
+                      <RadioGroupItem value={o.v} id={`dec-${o.v}`} />
+                      <Label htmlFor={`dec-${o.v}`} className="cursor-pointer text-sm">{o.l}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Where do you recharge best?</Label>
+                <RadioGroup
+                  value={quizData.energySource}
+                  onValueChange={(v) => setQuizData({ ...quizData, energySource: v })}
+                >
+                  {[
+                    { v: "people", l: "With people I love" },
+                    { v: "solo", l: "Solo, in my own world" },
+                    { v: "nature", l: "In nature" },
+                    { v: "mix", l: "Depends on the day" },
+                  ].map(o => (
+                    <div key={o.v} className="flex items-center space-x-2">
+                      <RadioGroupItem value={o.v} id={`eng-${o.v}`} />
+                      <Label htmlFor={`eng-${o.v}`} className="cursor-pointer text-sm">{o.l}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            </div>
+          )}
+
+          {step === 7 && (
             <div className="space-y-4">
               <Label>Anything else you'd like to share? (Optional)</Label>
               <Textarea
