@@ -248,7 +248,17 @@ const Chat = () => {
         user_id: userId,
         age_group: quiz.ageGroup,
         gender_identity: quiz.genderIdentity,
-        current_mood_scales: { mood: quiz.currentMood, stress: quiz.stressLevel },
+        current_mood_scales: {
+          mood: quiz.currentMood,
+          stress: quiz.stressLevel,
+          energy: quiz.energyLevel,
+          sleep: quiz.sleepQuality,
+          social: quiz.socialConnection,
+          personality: quiz.personality,
+          copingStyle: quiz.copingStyle,
+          decisionStyle: quiz.decisionStyle,
+          energySource: quiz.energySource,
+        },
         therapy_goals: quiz.therapyGoals,
         previous_experience: quiz.previousExperience,
         custom_notes: quiz.customNotes,
@@ -407,15 +417,25 @@ const Chat = () => {
         .single();
 
       if (quizResponse) {
+        const scales = (quizResponse.current_mood_scales as any) || {};
         setQuizData({
           ageGroup: quizResponse.age_group || "",
           genderIdentity: quizResponse.gender_identity || "",
-          currentMood: (quizResponse.current_mood_scales as any)?.mood || 5,
-          stressLevel: (quizResponse.current_mood_scales as any)?.stress || 5,
+          currentMood: scales.mood ?? 5,
+          stressLevel: scales.stress ?? 5,
+          energyLevel: scales.energy ?? 5,
+          sleepQuality: scales.sleep ?? 5,
+          socialConnection: scales.social ?? 5,
           therapyGoals: quizResponse.therapy_goals || [],
           previousExperience: quizResponse.previous_experience || "",
           customNotes: quizResponse.custom_notes || "",
           specificConcerns: [],
+          personality: scales.personality ?? {
+            introversion: 5, emotionality: 5, openness: 5, conscientiousness: 5, agreeableness: 5,
+          },
+          copingStyle: scales.copingStyle ?? "",
+          decisionStyle: scales.decisionStyle ?? "",
+          energySource: scales.energySource ?? "",
         });
       }
 
@@ -593,8 +613,17 @@ const Chat = () => {
 
     if (isSpeaking) stopSpeaking();
 
-    // Guest mode - ephemeral chat
+    // Guest mode - ephemeral chat with 5-message cap
     if (isGuestMode) {
+      const userMsgCount = messages.filter(m => m.role === "user").length;
+      if (userMsgCount >= 5) {
+        toast({
+          title: "Sign in to keep chatting 💛",
+          description: "You've reached the 5-message guest limit. Sign in (or create a free account) to continue and save your progress.",
+        });
+        navigate("/auth");
+        return;
+      }
       const userMessage: Message = { role: "user", content: input };
       setMessages(prev => [...prev, userMessage]);
       const currentInput = input;
@@ -617,6 +646,16 @@ const Chat = () => {
         if (error) throw error;
         const reply: Message = { role: "assistant", content: data.message };
         setMessages(prev => [...prev, reply]);
+
+        // After the 5th user message, prompt signup softly
+        if (userMsgCount + 1 === 5) {
+          setTimeout(() => {
+            toast({
+              title: "Loving the conversation? ✨",
+              description: "Sign in to save this chat and unlock unlimited sessions.",
+            });
+          }, 1500);
+        }
       } catch (error: any) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } finally {

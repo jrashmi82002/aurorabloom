@@ -27,6 +27,8 @@ interface MonthlyStats {
   journeyImage: string;
   characterMatch: string;
   personaInsight: string;
+  growthNarrative: string;       // NEW: month-over-month growth
+  growthDeltas: { sessions: number; messages: number; mood: number; stress: number };
 }
 
 const therapyLabels: Record<string, string> = {
@@ -159,6 +161,36 @@ const Report = () => {
         const characterMatch = generateCharacterMatch(moodTrend, avgMood, avgStress, therapyTypeCounts, sessions.length);
         const personaInsight = generatePersonaInsight(sessions.length, totalMessages, avgMood, avgStress, moodTrend, therapyTypeCounts, topGoals);
 
+        // ----- Month-over-month growth comparison -----
+        const monthStartStr = format(start, "yyyy-MM-dd");
+        const prevMonthStart = format(startOfMonth(subMonths(month, 1)), "yyyy-MM-dd");
+        const { data: prevMetrics } = await supabase
+          .from("monthly_metrics")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("month_start", prevMonthStart)
+          .maybeSingle();
+
+        const growthDeltas = {
+          sessions: sessions.length - (prevMetrics?.session_count || 0),
+          messages: totalMessages - (prevMetrics?.message_count || 0),
+          mood: Math.round((avgMood - (prevMetrics?.avg_mood_score || avgMood)) * 10) / 10,
+          stress: 0,
+        };
+        const growthNarrative = generateGrowthNarrative(growthDeltas, prevMetrics, avgMood, avgStress, sessions.length, totalMessages);
+
+        // Persist current month's metrics so NEXT month can compare
+        await supabase.from("monthly_metrics").upsert({
+          user_id: userId,
+          month_start: monthStartStr,
+          message_count: totalMessages,
+          session_count: sessions.length,
+          dominant_themes: topGoals.slice(0, 3),
+          avg_mood_score: Math.round(avgMood * 10) / 10,
+          growth_summary: growthNarrative,
+          previous_report_excerpt: prevMetrics?.growth_summary || null,
+        }, { onConflict: "user_id,month_start" });
+
         setStats({
           totalSessions: sessions.length,
           totalMessages,
@@ -174,6 +206,8 @@ const Report = () => {
           journeyImage: journeyImages[moodTrend] || journeyImages.default,
           characterMatch,
           personaInsight,
+          growthNarrative,
+          growthDeltas,
         });
       } else {
         setStats(null);
@@ -260,6 +294,33 @@ const Report = () => {
     items.push("Share your journey with a trusted friend or family member");
 
     return items.slice(0, 5); // Max 5 action items
+  };
+
+  const generateGrowthNarrative = (
+    deltas: { sessions: number; messages: number; mood: number; stress: number },
+    prev: any,
+    avgMood: number,
+    avgStress: number,
+    sessions: number,
+    messages: number,
+  ): string => {
+    if (!prev) {
+      return `This is your first tracked month — a baseline of ${sessions} session${sessions !== 1 ? "s" : ""} and ${messages} exchanges. Next month, we'll show how far you've grown from here. 🌱`;
+    }
+    const parts: string[] = [];
+    if (deltas.mood > 0.3) parts.push(`Your average mood lifted by **+${deltas.mood}** points compared to last month — real, measurable improvement. 🌤`);
+    else if (deltas.mood < -0.3) parts.push(`Your mood dipped by **${deltas.mood}** points vs last month. That's data, not failure — let's lean in this month. 💛`);
+    else parts.push(`Mood held steady within ±0.3 of last month — a sign of emotional regulation. 🪨`);
+
+    if (deltas.sessions > 0) parts.push(`You showed up **${deltas.sessions} more time${deltas.sessions !== 1 ? "s" : ""}** this month. Consistency compounds.`);
+    else if (deltas.sessions < 0) parts.push(`You had **${Math.abs(deltas.sessions)} fewer session${Math.abs(deltas.sessions) !== 1 ? "s" : ""}** than last month — quality over quantity also counts.`);
+
+    if (deltas.messages > 50) parts.push(`Your reflection volume grew by ${deltas.messages} messages — you're going deeper.`);
+
+    if (prev.dominant_themes && prev.dominant_themes.length > 0) {
+      parts.push(`Last month's themes: *${prev.dominant_themes.slice(0, 2).join(", ")}*. See how today's focus has shifted.`);
+    }
+    return parts.join(" ");
   };
 
   const generateInsights = (
@@ -643,6 +704,39 @@ const Report = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed">{stats.characterMatch}</p>
+              </CardContent>
+            </Card>
+
+            {/* Month-over-Month Growth — UNIQUE per month */}
+            <Card className="bg-gradient-to-br from-emerald-50/60 to-teal-50/60 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  📈 Your Growth vs Last Month
+                </CardTitle>
+                <CardDescription>What's changed, measurably</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-2 rounded-lg bg-background/50">
+                    <p className="text-xs text-muted-foreground">Sessions</p>
+                    <p className={`text-lg font-bold ${stats.growthDeltas.sessions >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {stats.growthDeltas.sessions >= 0 ? "+" : ""}{stats.growthDeltas.sessions}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-background/50">
+                    <p className="text-xs text-muted-foreground">Messages</p>
+                    <p className={`text-lg font-bold ${stats.growthDeltas.messages >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {stats.growthDeltas.messages >= 0 ? "+" : ""}{stats.growthDeltas.messages}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-background/50">
+                    <p className="text-xs text-muted-foreground">Mood Δ</p>
+                    <p className={`text-lg font-bold ${stats.growthDeltas.mood >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {stats.growthDeltas.mood >= 0 ? "+" : ""}{stats.growthDeltas.mood}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-muted-foreground leading-relaxed text-sm">{stats.growthNarrative}</p>
               </CardContent>
             </Card>
 

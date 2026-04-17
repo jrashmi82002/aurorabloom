@@ -525,7 +525,7 @@ const Diary = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="max-w-5xl mx-auto space-y-4">
+          <div className="max-w-3xl lg:max-w-2xl xl:max-w-2xl mx-auto space-y-4">
             {/* Calendar Dropdown */}
             <Collapsible open={calendarOpen} onOpenChange={setCalendarOpen}>
               <CollapsibleTrigger asChild>

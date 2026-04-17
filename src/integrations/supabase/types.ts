@@ -53,6 +53,48 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_metrics: {
+        Row: {
+          avg_mood_score: number | null
+          created_at: string | null
+          dominant_themes: string[] | null
+          growth_summary: string | null
+          id: string
+          message_count: number | null
+          month_start: string
+          previous_report_excerpt: string | null
+          session_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avg_mood_score?: number | null
+          created_at?: string | null
+          dominant_themes?: string[] | null
+          growth_summary?: string | null
+          id?: string
+          message_count?: number | null
+          month_start: string
+          previous_report_excerpt?: string | null
+          session_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avg_mood_score?: number | null
+          created_at?: string | null
+          dominant_themes?: string[] | null
+          growth_summary?: string | null
+          id?: string
+          message_count?: number | null
+          month_start?: string
+          previous_report_excerpt?: string | null
+          session_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -352,6 +394,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_current_month: { Args: { _ts: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
