@@ -27,6 +27,8 @@ interface MonthlyStats {
   journeyImage: string;
   characterMatch: string;
   personaInsight: string;
+  growthNarrative: string;       // NEW: month-over-month growth
+  growthDeltas: { sessions: number; messages: number; mood: number; stress: number };
 }
 
 const therapyLabels: Record<string, string> = {
@@ -159,6 +161,36 @@ const Report = () => {
         const characterMatch = generateCharacterMatch(moodTrend, avgMood, avgStress, therapyTypeCounts, sessions.length);
         const personaInsight = generatePersonaInsight(sessions.length, totalMessages, avgMood, avgStress, moodTrend, therapyTypeCounts, topGoals);
 
+        // ----- Month-over-month growth comparison -----
+        const monthStartStr = format(start, "yyyy-MM-dd");
+        const prevMonthStart = format(startOfMonth(subMonths(month, 1)), "yyyy-MM-dd");
+        const { data: prevMetrics } = await supabase
+          .from("monthly_metrics")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("month_start", prevMonthStart)
+          .maybeSingle();
+
+        const growthDeltas = {
+          sessions: sessions.length - (prevMetrics?.session_count || 0),
+          messages: totalMessages - (prevMetrics?.message_count || 0),
+          mood: Math.round((avgMood - (prevMetrics?.avg_mood_score || avgMood)) * 10) / 10,
+          stress: 0,
+        };
+        const growthNarrative = generateGrowthNarrative(growthDeltas, prevMetrics, avgMood, avgStress, sessions.length, totalMessages);
+
+        // Persist current month's metrics so NEXT month can compare
+        await supabase.from("monthly_metrics").upsert({
+          user_id: userId,
+          month_start: monthStartStr,
+          message_count: totalMessages,
+          session_count: sessions.length,
+          dominant_themes: topGoals.slice(0, 3),
+          avg_mood_score: Math.round(avgMood * 10) / 10,
+          growth_summary: growthNarrative,
+          previous_report_excerpt: prevMetrics?.growth_summary || null,
+        }, { onConflict: "user_id,month_start" });
+
         setStats({
           totalSessions: sessions.length,
           totalMessages,
@@ -174,6 +206,8 @@ const Report = () => {
           journeyImage: journeyImages[moodTrend] || journeyImages.default,
           characterMatch,
           personaInsight,
+          growthNarrative,
+          growthDeltas,
         });
       } else {
         setStats(null);
