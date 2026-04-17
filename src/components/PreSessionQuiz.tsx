@@ -387,19 +387,23 @@ export const PreSessionQuiz = ({ userId, therapyType, onComplete, hasExistingPro
   const canProceed = () => {
     switch (step) {
       case 1:
-        return true; // Mood step - always can proceed
+        return true; // Mood / energy / sleep / stress / social - sliders
       case 2:
         return quizData.therapyGoals.length > 0;
       case 3:
         return quizData.specificConcerns.length > 0;
       case 4:
         return quizData.previousExperience;
+      case 5:
+        return true; // personality sliders
+      case 6:
+        return !!quizData.copingStyle && !!quizData.decisionStyle && !!quizData.energySource;
       default:
         return true;
     }
   };
 
-  const totalSteps = 5;
+  const totalSteps = 7;
 
   return (
     <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-4">
