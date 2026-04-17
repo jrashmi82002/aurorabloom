@@ -707,6 +707,39 @@ const Report = () => {
               </CardContent>
             </Card>
 
+            {/* Month-over-Month Growth — UNIQUE per month */}
+            <Card className="bg-gradient-to-br from-emerald-50/60 to-teal-50/60 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  📈 Your Growth vs Last Month
+                </CardTitle>
+                <CardDescription>What's changed, measurably</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-2 rounded-lg bg-background/50">
+                    <p className="text-xs text-muted-foreground">Sessions</p>
+                    <p className={`text-lg font-bold ${stats.growthDeltas.sessions >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {stats.growthDeltas.sessions >= 0 ? "+" : ""}{stats.growthDeltas.sessions}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-background/50">
+                    <p className="text-xs text-muted-foreground">Messages</p>
+                    <p className={`text-lg font-bold ${stats.growthDeltas.messages >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {stats.growthDeltas.messages >= 0 ? "+" : ""}{stats.growthDeltas.messages}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-background/50">
+                    <p className="text-xs text-muted-foreground">Mood Δ</p>
+                    <p className={`text-lg font-bold ${stats.growthDeltas.mood >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {stats.growthDeltas.mood >= 0 ? "+" : ""}{stats.growthDeltas.mood}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-muted-foreground leading-relaxed text-sm">{stats.growthNarrative}</p>
+              </CardContent>
+            </Card>
+
             {/* Detailed Persona Insight */}
             <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-950/20 dark:to-pink-950/20 border-rose-200/50">
               <CardHeader>
