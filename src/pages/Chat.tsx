@@ -672,7 +672,7 @@ const Chat = () => {
         setMessages(prev => [...prev, reply]);
 
         // After the 5th user message, prompt signup softly
-        if (userMsgCount + 1 === 5) {
+        if (userMsgCount + 1 === 15) {
           setTimeout(() => {
             toast({
               title: "Loving the conversation? ✨",
