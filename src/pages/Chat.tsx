@@ -402,6 +402,21 @@ const Chat = () => {
 
   const loadExistingSession = async (sid: string) => {
     try {
+      // Check if session is from a previous month (read-only)
+      const { data: sessionRow } = await supabase
+        .from("therapy_sessions")
+        .select("started_at")
+        .eq("id", sid)
+        .single();
+      if (sessionRow?.started_at) {
+        const started = new Date(sessionRow.started_at);
+        const now = new Date();
+        const isPrevMonth =
+          started.getFullYear() !== now.getFullYear() ||
+          started.getMonth() !== now.getMonth();
+        setIsReadOnly(isPrevMonth);
+      }
+
       const { data: msgs, error } = await supabase
         .from("therapy_messages")
         .select("role, content")
