@@ -627,15 +627,23 @@ const Chat = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    if (isReadOnly) {
+      toast({
+        title: "This session is read-only",
+        description: "Previous month sessions can't be edited. Start a new session to continue.",
+      });
+      return;
+    }
+
     if (isSpeaking) stopSpeaking();
 
-    // Guest mode - ephemeral chat with 5-message cap
+    // Guest mode - ephemeral chat with 15-message cap
     if (isGuestMode) {
       const userMsgCount = messages.filter(m => m.role === "user").length;
-      if (userMsgCount >= 5) {
+      if (userMsgCount >= 15) {
         toast({
           title: "Sign in to keep chatting 💛",
-          description: "You've reached the 5-message guest limit. Sign in (or create a free account) to continue and save your progress.",
+          description: "You've reached the 15-message guest limit. Sign in (or create a free account) to continue and save your progress.",
         });
         navigate("/auth");
         return;
