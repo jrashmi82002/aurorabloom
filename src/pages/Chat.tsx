@@ -126,6 +126,7 @@ const Chat = () => {
   const [isPro, setIsPro] = useState(false);
   const [isLoadingVoice, setIsLoadingVoice] = useState(false);
   const [userName, setUserName] = useState<string>("");
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null); // kept for future use
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -401,6 +402,21 @@ const Chat = () => {
 
   const loadExistingSession = async (sid: string) => {
     try {
+      // Check if session is from a previous month (read-only)
+      const { data: sessionRow } = await supabase
+        .from("therapy_sessions")
+        .select("started_at")
+        .eq("id", sid)
+        .single();
+      if (sessionRow?.started_at) {
+        const started = new Date(sessionRow.started_at);
+        const now = new Date();
+        const isPrevMonth =
+          started.getFullYear() !== now.getFullYear() ||
+          started.getMonth() !== now.getMonth();
+        setIsReadOnly(isPrevMonth);
+      }
+
       const { data: msgs, error } = await supabase
         .from("therapy_messages")
         .select("role, content")
@@ -611,15 +627,23 @@ const Chat = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    if (isReadOnly) {
+      toast({
+        title: "This session is read-only",
+        description: "Previous month sessions can't be edited. Start a new session to continue.",
+      });
+      return;
+    }
+
     if (isSpeaking) stopSpeaking();
 
-    // Guest mode - ephemeral chat with 5-message cap
+    // Guest mode - ephemeral chat with 15-message cap
     if (isGuestMode) {
       const userMsgCount = messages.filter(m => m.role === "user").length;
-      if (userMsgCount >= 5) {
+      if (userMsgCount >= 15) {
         toast({
           title: "Sign in to keep chatting 💛",
-          description: "You've reached the 5-message guest limit. Sign in (or create a free account) to continue and save your progress.",
+          description: "You've reached the 15-message guest limit. Sign in (or create a free account) to continue and save your progress.",
         });
         navigate("/auth");
         return;
@@ -648,7 +672,7 @@ const Chat = () => {
         setMessages(prev => [...prev, reply]);
 
         // After the 5th user message, prompt signup softly
-        if (userMsgCount + 1 === 5) {
+        if (userMsgCount + 1 === 15) {
           setTimeout(() => {
             toast({
               title: "Loving the conversation? ✨",
@@ -939,18 +963,23 @@ const Chat = () => {
 
           {/* Input Area - Fixed at bottom */}
           <div className="shrink-0 border-t border-border/50 bg-background/80 backdrop-blur-sm px-4 py-3">
+            {isReadOnly && (
+              <div className="max-w-3xl mx-auto mb-2 text-xs text-center text-muted-foreground bg-muted/40 rounded-md py-2 px-3">
+                📖 This is a previous month session — read-only. Start a new session to continue your journey.
+              </div>
+            )}
             <div className="max-w-3xl mx-auto flex gap-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                placeholder="Share your thoughts..."
+                placeholder={isReadOnly ? "This session is read-only" : "Share your thoughts..."}
                 className="flex-1 h-12 transition-all duration-300 focus:shadow-gentle"
-                disabled={loading}
+                disabled={loading || isReadOnly}
               />
               <Button
                 onClick={sendMessage}
-                disabled={loading || !input.trim()}
+                disabled={loading || !input.trim() || isReadOnly}
                 className="h-12 px-6 bg-gradient-calm hover:opacity-90 transition-opacity"
               >
                 <Send className="w-5 h-5" />
