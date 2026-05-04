@@ -532,19 +532,13 @@ Use this naturally. Don't mention the quiz. Adapt your tone based on their mood 
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "We're a bit busy right now. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse("We're a bit busy right now. Please try again in a moment.", 429);
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Service temporarily unavailable. Please try again later." }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse("Service temporarily unavailable. Please try again later.", 402);
       }
       const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
+      console.error("AI Gateway error:", response.status, errorText);
       throw new Error(`AI Gateway error: ${response.status}`);
     }
 
@@ -555,16 +549,9 @@ Use this naturally. Don't mention the quiz. Adapt your tone based on their mood 
       aiMessage += getRelatableStory(therapyType);
     }
 
-    return new Response(
-      JSON.stringify({ message: aiMessage }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    return jsonResponse({ message: aiMessage });
   } catch (error) {
-    console.error('Error in therapy-chat function:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error("Error in therapy-chat function:", error);
+    return errorResponse(error instanceof Error ? error.message : "Unknown error", 500);
   }
 });
