@@ -412,75 +412,61 @@ const getRelatableStory = (therapyType: string): string => {
   return allStories[Math.floor(Math.random() * allStories.length)];
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+Deno.serve(async (req) => {
+  const preflight = handlePreflight(req);
+  if (preflight) return preflight;
 
   try {
-    const { sessionId, therapyType, messages, isInitial, quizData, messageCount, voiceGender = "female", userName, isGuestMode, isPersonaGeneration } = await req.json();
+    const body = await parseJsonBody(req, BodySchema);
+    if (body instanceof Response) return body;
 
+    const {
+      sessionId,
+      therapyType,
+      messages,
+      isInitial,
+      quizData,
+      messageCount,
+      voiceGender,
+      userName,
+      isGuestMode,
+      isPersonaGeneration,
+    } = body;
+
+    // Greeting requests are public — no AI inference, no DB writes.
     if (isInitial) {
-      return new Response(
-        JSON.stringify({ message: getPersonalizedGreeting(therapyType, voiceGender, quizData, userName) }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({
+        message: getPersonalizedGreeting(therapyType, voiceGender, quizData, userName),
+      });
     }
 
-    // Guest mode and persona generation: skip strict auth, use anon key
+    // Auth: guest/persona modes require any bearer token (validated by gateway);
+    // authenticated chat requires a real verified user.
     if (isGuestMode || isPersonaGeneration) {
-      // For guest mode, skip session validation but still require some auth
-      const authHeader = req.headers.get('Authorization');
-      if (!authHeader) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) return errorResponse("Unauthorized", 401);
     } else {
-      const authHeader = req.headers.get('Authorization');
-      if (!authHeader?.startsWith('Bearer ')) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      const auth = await requireUser(req);
+      if (auth instanceof Response) return auth;
 
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
-
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-      if (authError || !user) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // For real sessions, also confirm the session row belongs to this user.
+      if (
+        sessionId &&
+        sessionId !== "persona-generation" &&
+        sessionId !== "guest-session"
+      ) {
+        const userClient = createUserClient(auth.authHeader);
+        const { data: session, error: sessionError } = await userClient
+          .from("therapy_sessions")
+          .select("user_id, therapy_type")
+          .eq("id", sessionId)
+          .maybeSingle();
+        if (sessionError || !session || session.user_id !== auth.userId) {
+          return errorResponse("Session not found or unauthorized", 403);
+        }
       }
     }
 
-    if (!isGuestMode && !isPersonaGeneration && sessionId && sessionId !== "persona-generation" && sessionId !== "guest-session") {
-      const authHeader2 = req.headers.get('Authorization');
-      const supabaseClient2 = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader2! } } }
-      );
-      const { data: session, error: sessionError } = await supabaseClient2
-        .from('therapy_sessions')
-        .select('user_id, therapy_type')
-        .eq('id', sessionId)
-        .single();
-
-      if (sessionError || !session) {
-        return new Response(
-          JSON.stringify({ error: 'Session not found or unauthorized' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
