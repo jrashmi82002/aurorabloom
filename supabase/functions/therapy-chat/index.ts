@@ -1,11 +1,30 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { handlePreflight, jsonResponse, errorResponse, corsHeaders } from "../_shared/cors.ts";
+import { requireUser } from "../_shared/auth.ts";
+import { createUserClient } from "../_shared/supabase.ts";
+import { parseJsonBody, z } from "../_shared/validation.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+// Therapy chat input schema. We allow optional fields because the same endpoint
+// is used for greetings, guest chat, and persona generation.
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().max(10000),
+});
+
+const BodySchema = z.object({
+  sessionId: z.string().min(1).max(100).optional(),
+  therapyType: z.string().min(1).max(50),
+  messages: z.array(MessageSchema).max(200).optional().default([]),
+  isInitial: z.boolean().optional().default(false),
+  quizData: z.any().optional(),
+  hasPreviousSessions: z.boolean().optional(),
+  messageCount: z.number().int().min(0).max(10000).optional().default(0),
+  voiceGender: z.string().max(20).optional().default("female"),
+  userName: z.string().max(100).optional(),
+  isGuestMode: z.boolean().optional().default(false),
+  isPersonaGeneration: z.boolean().optional().default(false),
+});
+
 
 const getTherapistName = (therapyType: string, voiceGender: string) => {
   if (therapyType === "krishna_chat") return "Krishna";
