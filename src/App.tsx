@@ -4,12 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import Auth from "./pages/Auth";
-import Chat from "./pages/Chat";
-import Admin from "./pages/Admin";
-import Report from "./pages/Report";
+import { AuthPage } from "@/features/auth";
+import { ChatPage } from "@/features/chat";
+import { AdminPage } from "@/features/admin";
+import { ReportPage } from "@/features/report";
+import { DiaryPage } from "@/features/diary";
 import Activities from "./pages/Activities";
-import Diary from "./pages/Diary";
 import Blog from "./pages/Blog";
 import ProAccess from "./pages/ProAccess";
 import NotFound from "./pages/NotFound";
@@ -24,12 +24,12 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/report" element={<Report />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/report" element={<ReportPage />} />
           <Route path="/activities" element={<Activities />} />
-          <Route path="/diary" element={<Diary />} />
+          <Route path="/diary" element={<DiaryPage />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/pro-access" element={<ProAccess />} />
           <Route path="*" element={<NotFound />} />
