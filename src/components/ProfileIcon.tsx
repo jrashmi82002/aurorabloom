@@ -27,111 +27,39 @@ interface ProfileIconProps {
 }
 
 export const ProfileIcon = ({ className }: ProfileIconProps) => {
-  const [initial, setInitial] = useState("U");
-  const [username, setUsername] = useState("");
-  const [isPro, setIsPro] = useState(false);
-  const [dailyMessageCount, setDailyMessageCount] = useState(0);
-  const [dailySessionCount, setDailySessionCount] = useState(0);
+  const { user, loading: authLoading } = useAuth();
+  const { profile, isPro } = useProStatus();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [personaOpen, setPersonaOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    checkAuth();
+  const isLoggedIn = !!user;
+  const username = profile?.username ?? "";
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setIsLoggedIn(true);
-        fetchUserProfile();
-      } else {
-        setIsLoggedIn(false);
-      }
-    });
+  const initial = (() => {
+    const name = profile?.full_name || (user?.user_metadata as any)?.full_name || "";
+    const email = user?.email || "";
+    if (name) return name.charAt(0).toUpperCase();
+    if (username) return username.charAt(0).toUpperCase();
+    if (email) return email.charAt(0).toUpperCase();
+    return "U";
+  })();
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setIsLoggedIn(true);
-      fetchUserProfile();
-    }
-  };
-
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    
-    const channel = supabase
-      .channel("profile-status")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles" },
-        async (payload) => {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user && (payload.new as any).id === user.id) {
-            const status = (payload.new as any).pro_subscription_status;
-            setIsPro(status === "yearly" || status === "monthly");
-            setDailyMessageCount((payload.new as any).daily_message_count || 0);
-            setDailySessionCount((payload.new as any).daily_session_count || 0);
-            if ((payload.new as any).username) {
-              setUsername((payload.new as any).username);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [isLoggedIn]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("pro_subscription_status, daily_message_count, daily_session_count, last_message_date, username, full_name")
-        .eq("id", user.id)
-        .single();
-
-      const name = profile?.full_name || user.user_metadata?.full_name || "";
-      const profileUsername = profile?.username || "";
-      const email = user.email || "";
-      
-      if (name) setInitial(name.charAt(0).toUpperCase());
-      else if (profileUsername) setInitial(profileUsername.charAt(0).toUpperCase());
-      else if (email) setInitial(email.charAt(0).toUpperCase());
-
-      setUsername(profileUsername);
-      const status = profile?.pro_subscription_status;
-      setIsPro(status === "yearly" || status === "monthly");
-      
-      const today = new Date().toISOString().split('T')[0];
-      const lastMessageDate = profile?.last_message_date;
-      
-      if (lastMessageDate !== today) {
-        setDailyMessageCount(0);
-        setDailySessionCount(0);
-      } else {
-        setDailyMessageCount(profile?.daily_message_count || 0);
-        setDailySessionCount(profile?.daily_session_count || 0);
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  };
+  // Daily counts: reset display if last_message_date is not today.
+  const today = new Date().toISOString().split("T")[0];
+  const isToday = profile?.last_message_date === today;
+  const dailyMessageCount = isToday ? profile?.daily_message_count ?? 0 : 0;
+  const dailySessionCount = isToday ? profile?.daily_session_count ?? 0 : 0;
 
   const messagesRemaining = Math.max(0, 200 - dailyMessageCount);
   const sessionsRemaining = Math.max(0, 3 - dailySessionCount);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authService.signOut();
     navigate("/auth");
   };
 
+  if (authLoading) return null;
   // Not logged in - show login button
   if (!isLoggedIn) {
     return (
