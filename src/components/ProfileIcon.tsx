@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Crown, MessageCircle, Infinity, Settings, LogOut, Sparkles, BookHeart, LogIn } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useProStatus } from "@/hooks/useProStatus";
+import { authService } from "@/services/auth.service";
 import {
   Popover,
   PopoverContent,
