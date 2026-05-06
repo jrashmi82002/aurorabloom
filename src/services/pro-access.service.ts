@@ -9,7 +9,7 @@ export const proAccessService = {
       .from("pro_access_requests")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+      .order("requested_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error) throw error;
