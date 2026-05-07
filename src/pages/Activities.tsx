@@ -818,6 +818,9 @@ const Activities = () => {
                           <Button variant={drawingTool === "fill" ? "default" : "outline"} size="sm" onClick={() => setDrawingTool("fill")} className="gap-1">
                             <PaintBucket className="w-3 h-3" /> Fill
                           </Button>
+                          <Button variant={drawingTool === "text" ? "default" : "outline"} size="sm" onClick={() => setDrawingTool("text")} className="gap-1">
+                            <Type className="w-3 h-3" /> Text
+                          </Button>
                         </div>
                         {["#4ade80", "#60a5fa", "#f472b6", "#fbbf24", "#a78bfa", "#000000"].map((color) => (
                           <button key={color} className={`w-6 h-6 rounded-full border-2 ${brushColor === color ? "border-foreground" : "border-transparent"}`} style={{ backgroundColor: color }} onClick={() => setBrushColor(color)} />
@@ -826,10 +829,41 @@ const Activities = () => {
                           <Undo2 className="w-3 h-3" /> Undo
                         </Button>
                         <Button variant="outline" size="sm" onClick={clearCanvas}>Clear</Button>
+                        <Button variant="default" size="sm" onClick={savePainting} className="gap-1">
+                          <Save className="w-3 h-3" /> {editingPaintingId ? "Save" : "Save"}
+                        </Button>
+                        {editingPaintingId && (
+                          <Button variant="outline" size="sm" onClick={saveAsNewPainting} className="gap-1">
+                            <Save className="w-3 h-3" /> Save as new
+                          </Button>
+                        )}
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                       <canvas ref={canvasRef} className="w-full h-[400px] rounded-lg cursor-crosshair border border-border" style={{ backgroundColor: "#ffffff" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onClick={handleCanvasClick} />
+                      {paintings.length > 0 && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Your saved paintings ({paintings.length}/10)</p>
+                          <div className="flex gap-3 overflow-x-auto pb-2">
+                            {paintings.map((p) => (
+                              <div key={p.id} className={`relative shrink-0 w-32 rounded-lg border ${editingPaintingId === p.id ? "border-primary ring-2 ring-primary" : "border-border"} bg-card overflow-hidden group`}>
+                                <img src={p.image_data} alt="painting" className="w-full h-20 object-cover bg-white" />
+                                <div className="p-2 text-xs">
+                                  <div className="text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</div>
+                                  <div className="flex gap-1 mt-1">
+                                    <Button variant="outline" size="sm" className="h-7 px-2 flex-1 gap-1" onClick={() => editPainting(p)}>
+                                      <Pencil className="w-3 h-3" /> Edit
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="h-7 px-2 gap-1" onClick={() => deletePainting(p.id)}>
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
