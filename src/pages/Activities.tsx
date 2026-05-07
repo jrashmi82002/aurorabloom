@@ -174,7 +174,7 @@ const Activities = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || drawingTool === "fill") return;
+    if (!isDrawing || drawingTool === "fill" || drawingTool === "text") return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx || !canvas) return;
