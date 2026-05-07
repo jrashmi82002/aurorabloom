@@ -8,7 +8,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
-import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye, Undo2, UserCircle } from "lucide-react";
+import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye, Undo2, UserCircle, Type, Save, Trash2, Pencil } from "lucide-react";
+import { paintingsService, type Painting } from "@/services/paintings.service";
+import { useToast } from "@/hooks/use-toast";
 import { useCalmingSounds } from "@/hooks/useCalmingSounds";
 import { createKrishnaBhajanAudio } from "@/hooks/useKrishnaBhajan";
 import { GitaVerses } from "@/components/activities/GitaVerses";
@@ -26,7 +28,10 @@ const Activities = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [brushColor, setBrushColor] = useState("#4ade80");
-  const [drawingTool, setDrawingTool] = useState<"brush" | "eraser" | "fill">("brush");
+  const [drawingTool, setDrawingTool] = useState<"brush" | "eraser" | "fill" | "text">("brush");
+  const [paintings, setPaintings] = useState<Painting[]>([]);
+  const [editingPaintingId, setEditingPaintingId] = useState<string | null>(null);
+  const { toast } = useToast();
   const [breathePhase, setBreathePhase] = useState<"inhale" | "hold" | "exhale">("inhale");
   const [canvasHistory, setCanvasHistory] = useState<ImageData[]>([]);
   
@@ -169,7 +174,7 @@ const Activities = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || drawingTool === "fill") return;
+    if (!isDrawing || drawingTool === "fill" || drawingTool === "text") return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!ctx || !canvas) return;
@@ -246,6 +251,10 @@ const Activities = () => {
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (drawingTool === "text") {
+      handleCanvasTextClick(e);
+      return;
+    }
     if (drawingTool !== "fill") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -264,7 +273,102 @@ const Activities = () => {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     saveCanvasState();
+    setEditingPaintingId(null);
   };
+
+  const handleCanvasTextClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas) return;
+    const text = window.prompt("Enter text:");
+    if (!text) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    ctx.fillStyle = brushColor;
+    ctx.font = "24px sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText(text, x, y);
+    saveCanvasState();
+  };
+
+  const loadPaintings = useCallback(async (uid: string) => {
+    try {
+      const list = await paintingsService.list(uid);
+      setPaintings(list);
+    } catch (e) {
+      console.error("loadPaintings", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeGame === "drawing" && user) {
+      loadPaintings(user.id);
+    }
+  }, [activeGame, user, loadPaintings]);
+
+  const savePainting = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !user) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    try {
+      if (editingPaintingId) {
+        await paintingsService.update(editingPaintingId, dataUrl);
+        toast({ title: "Painting updated" });
+      } else {
+        const created = await paintingsService.create(user.id, dataUrl);
+        setEditingPaintingId(created.id);
+        toast({ title: "Painting saved" });
+      }
+      await loadPaintings(user.id);
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const saveAsNewPainting = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !user) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    try {
+      const created = await paintingsService.create(user.id, dataUrl);
+      setEditingPaintingId(created.id);
+      toast({ title: "Saved as new painting" });
+      await loadPaintings(user.id);
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const editPainting = (p: Painting) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      saveCanvasState();
+      setEditingPaintingId(p.id);
+    };
+    img.src = p.image_data;
+  };
+
+  const deletePainting = async (id: string) => {
+    if (!user) return;
+    if (!window.confirm("Delete this painting?")) return;
+    try {
+      await paintingsService.remove(id);
+      if (editingPaintingId === id) setEditingPaintingId(null);
+      await loadPaintings(user.id);
+    } catch (e: any) {
+      toast({ title: "Delete failed", description: e.message, variant: "destructive" });
+    }
+  };
+
 
   // Bhajan audio
   const toggleBhajan = () => {
@@ -714,6 +818,9 @@ const Activities = () => {
                           <Button variant={drawingTool === "fill" ? "default" : "outline"} size="sm" onClick={() => setDrawingTool("fill")} className="gap-1">
                             <PaintBucket className="w-3 h-3" /> Fill
                           </Button>
+                          <Button variant={drawingTool === "text" ? "default" : "outline"} size="sm" onClick={() => setDrawingTool("text")} className="gap-1">
+                            <Type className="w-3 h-3" /> Text
+                          </Button>
                         </div>
                         {["#4ade80", "#60a5fa", "#f472b6", "#fbbf24", "#a78bfa", "#000000"].map((color) => (
                           <button key={color} className={`w-6 h-6 rounded-full border-2 ${brushColor === color ? "border-foreground" : "border-transparent"}`} style={{ backgroundColor: color }} onClick={() => setBrushColor(color)} />
@@ -722,10 +829,41 @@ const Activities = () => {
                           <Undo2 className="w-3 h-3" /> Undo
                         </Button>
                         <Button variant="outline" size="sm" onClick={clearCanvas}>Clear</Button>
+                        <Button variant="default" size="sm" onClick={savePainting} className="gap-1">
+                          <Save className="w-3 h-3" /> {editingPaintingId ? "Save" : "Save"}
+                        </Button>
+                        {editingPaintingId && (
+                          <Button variant="outline" size="sm" onClick={saveAsNewPainting} className="gap-1">
+                            <Save className="w-3 h-3" /> Save as new
+                          </Button>
+                        )}
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                       <canvas ref={canvasRef} className="w-full h-[400px] rounded-lg cursor-crosshair border border-border" style={{ backgroundColor: "#ffffff" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onClick={handleCanvasClick} />
+                      {paintings.length > 0 && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Your saved paintings ({paintings.length}/10)</p>
+                          <div className="flex gap-3 overflow-x-auto pb-2">
+                            {paintings.map((p) => (
+                              <div key={p.id} className={`relative shrink-0 w-32 rounded-lg border ${editingPaintingId === p.id ? "border-primary ring-2 ring-primary" : "border-border"} bg-card overflow-hidden group`}>
+                                <img src={p.image_data} alt="painting" className="w-full h-20 object-cover bg-white" />
+                                <div className="p-2 text-xs">
+                                  <div className="text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</div>
+                                  <div className="flex gap-1 mt-1">
+                                    <Button variant="outline" size="sm" className="h-7 px-2 flex-1 gap-1" onClick={() => editPainting(p)}>
+                                      <Pencil className="w-3 h-3" /> Edit
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="h-7 px-2 gap-1" onClick={() => deletePainting(p.id)}>
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}

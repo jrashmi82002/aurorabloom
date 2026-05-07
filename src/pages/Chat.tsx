@@ -518,33 +518,31 @@ const Chat = () => {
   // Clean text for speech - remove emojis, symbols, markdown, and punctuation artifacts
   const cleanTextForSpeech = (text: string): string => {
     return text
-      .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
-      .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Misc symbols
-      .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Transport
-      .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // Flags
-      .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Misc symbols
-      .replace(/[\u{2700}-\u{27BF}]/gu, '')   // Dingbats
-      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')   // Variation selectors
-      .replace(/[\u{200D}]/gu, '')             // Zero-width joiner
-      .replace(/[\u{E0020}-\u{E007F}]/gu, '') // Tags
-      .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '') // Chess symbols
-      .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '') // Extended-A symbols
-      .replace(/[\u{2702}-\u{27B0}]/gu, '')   // More dingbats
-      .replace(/[\u{1F900}-\u{1F9FF}]/gu, '') // Supplemental symbols
-      .replace(/[\u{1F018}-\u{1F270}]/gu, '') // Various symbols
-      .replace(/[*_~`#|>]/g, '')              // Markdown symbols
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // Markdown links → just text
-      .replace(/```[\s\S]*?```/g, '')          // Code blocks
-      .replace(/`([^`]*)`/g, '$1')             // Inline code → just text
-      .replace(/^[-•]\s+/gm, '')              // List bullets
-      .replace(/^\d+\.\s+/gm, '')             // Numbered lists
-      .replace(/[""\u201C\u201D]/g, '')        // Curly/smart quotes
-      .replace(/[''\u2018\u2019]/g, '')        // Smart single quotes
-      .replace(/[—–]/g, ' ')                  // Em/en dashes to space
-      .replace(/\.{3,}/g, ', ')               // Ellipsis to pause
-      .replace(/[()[\]{}]/g, '')              // Brackets
-      .replace(/\n{3,}/g, '\n\n')             // Excessive newlines
-      .replace(/\s{2,}/g, ' ')                // Excessive spaces
+      // Remove all emojis & pictographic symbols
+      .replace(/\p{Extended_Pictographic}/gu, '')
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+      .replace(/[\u{2600}-\u{27BF}]/gu, '')
+      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+      .replace(/[\u{200D}\u{20E3}]/gu, '')
+      // Strip markdown formatting
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`([^`]*)`/g, '$1')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[*_~`#|>]/g, '')
+      .replace(/^[-•]\s+/gm, '')
+      .replace(/^\d+\.\s+/gm, '')
+      // Normalize quotes & dashes
+      .replace(/[""\u201C\u201D''\u2018\u2019""„«»]/g, '')
+      .replace(/[—–\-]/g, ' ')
+      // Remove brackets & parentheses
+      .replace(/[()[\]{}<>]/g, ' ')
+      // Convert ellipses to soft pause
+      .replace(/\.{2,}/g, ' ')
+      // Strip stray symbols but keep sentence enders for natural prosody
+      .replace(/[;:"'/\\@#$%^&*+=|~`]/g, ' ')
+      // Collapse whitespace
+      .replace(/\n+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
       .trim();
   };
 

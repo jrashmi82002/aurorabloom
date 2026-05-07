@@ -128,6 +128,33 @@ export type Database = {
         }
         Relationships: []
       }
+      paintings: {
+        Row: {
+          created_at: string
+          id: string
+          image_data: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_data: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_data?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pro_access_requests: {
         Row: {
           email: string
