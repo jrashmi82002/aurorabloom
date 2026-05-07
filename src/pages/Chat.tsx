@@ -538,11 +538,8 @@ const Chat = () => {
       .replace(/[()[\]{}<>]/g, ' ')
       // Convert ellipses to soft pause
       .replace(/\.{2,}/g, ' ')
-      // Strip remaining punctuation marks (keep . , ? ! for natural prosody, then remove . , as "human pauses" only)
+      // Strip stray symbols but keep sentence enders for natural prosody
       .replace(/[;:"'/\\@#$%^&*+=|~`]/g, ' ')
-      // Final cleanup: remove standalone punctuation symbols entirely except sentence enders
-      .replace(/[.,]/g, ' ')
-      .replace(/[!?]+/g, '.')
       // Collapse whitespace
       .replace(/\n+/g, ' ')
       .replace(/\s{2,}/g, ' ')
