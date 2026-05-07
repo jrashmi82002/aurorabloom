@@ -28,7 +28,10 @@ const Activities = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [brushColor, setBrushColor] = useState("#4ade80");
-  const [drawingTool, setDrawingTool] = useState<"brush" | "eraser" | "fill">("brush");
+  const [drawingTool, setDrawingTool] = useState<"brush" | "eraser" | "fill" | "text">("brush");
+  const [paintings, setPaintings] = useState<Painting[]>([]);
+  const [editingPaintingId, setEditingPaintingId] = useState<string | null>(null);
+  const { toast } = useToast();
   const [breathePhase, setBreathePhase] = useState<"inhale" | "hold" | "exhale">("inhale");
   const [canvasHistory, setCanvasHistory] = useState<ImageData[]>([]);
   
