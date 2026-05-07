@@ -251,6 +251,10 @@ const Activities = () => {
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (drawingTool === "text") {
+      handleCanvasTextClick(e);
+      return;
+    }
     if (drawingTool !== "fill") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
