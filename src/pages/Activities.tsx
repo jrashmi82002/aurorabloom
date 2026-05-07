@@ -269,7 +269,102 @@ const Activities = () => {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     saveCanvasState();
+    setEditingPaintingId(null);
   };
+
+  const handleCanvasTextClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas) return;
+    const text = window.prompt("Enter text:");
+    if (!text) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    ctx.fillStyle = brushColor;
+    ctx.font = "24px sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText(text, x, y);
+    saveCanvasState();
+  };
+
+  const loadPaintings = useCallback(async (uid: string) => {
+    try {
+      const list = await paintingsService.list(uid);
+      setPaintings(list);
+    } catch (e) {
+      console.error("loadPaintings", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeGame === "drawing" && user) {
+      loadPaintings(user.id);
+    }
+  }, [activeGame, user, loadPaintings]);
+
+  const savePainting = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !user) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    try {
+      if (editingPaintingId) {
+        await paintingsService.update(editingPaintingId, dataUrl);
+        toast({ title: "Painting updated" });
+      } else {
+        const created = await paintingsService.create(user.id, dataUrl);
+        setEditingPaintingId(created.id);
+        toast({ title: "Painting saved" });
+      }
+      await loadPaintings(user.id);
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const saveAsNewPainting = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !user) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    try {
+      const created = await paintingsService.create(user.id, dataUrl);
+      setEditingPaintingId(created.id);
+      toast({ title: "Saved as new painting" });
+      await loadPaintings(user.id);
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const editPainting = (p: Painting) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx || !canvas) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      saveCanvasState();
+      setEditingPaintingId(p.id);
+    };
+    img.src = p.image_data;
+  };
+
+  const deletePainting = async (id: string) => {
+    if (!user) return;
+    if (!window.confirm("Delete this painting?")) return;
+    try {
+      await paintingsService.remove(id);
+      if (editingPaintingId === id) setEditingPaintingId(null);
+      await loadPaintings(user.id);
+    } catch (e: any) {
+      toast({ title: "Delete failed", description: e.message, variant: "destructive" });
+    }
+  };
+
 
   // Bhajan audio
   const toggleBhajan = () => {
