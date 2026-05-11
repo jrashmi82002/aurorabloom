@@ -25,6 +25,24 @@ const BodySchema = z.object({
   isPersonaGeneration: z.boolean().optional().default(false),
 });
 
+// In-memory rate limiter for guest mode (per IP). Resets on cold start, which
+// is acceptable as a basic abuse cap on top of the client-side 15-message limit.
+const GUEST_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const GUEST_MAX_REQUESTS = 20;          // 20 AI calls / IP / hour
+const guestHits = new Map<string, { count: number; resetAt: number }>();
+
+function checkGuestRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = guestHits.get(ip);
+  if (!entry || entry.resetAt < now) {
+    guestHits.set(ip, { count: 1, resetAt: now + GUEST_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= GUEST_MAX_REQUESTS) return false;
+  entry.count += 1;
+  return true;
+}
+
 
 const getTherapistName = (therapyType: string, voiceGender: string) => {
   if (therapyType === "krishna_chat") return "Krishna";
