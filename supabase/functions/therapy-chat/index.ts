@@ -25,6 +25,24 @@ const BodySchema = z.object({
   isPersonaGeneration: z.boolean().optional().default(false),
 });
 
+// In-memory rate limiter for guest mode (per IP). Resets on cold start, which
+// is acceptable as a basic abuse cap on top of the client-side 15-message limit.
+const GUEST_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const GUEST_MAX_REQUESTS = 20;          // 20 AI calls / IP / hour
+const guestHits = new Map<string, { count: number; resetAt: number }>();
+
+function checkGuestRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = guestHits.get(ip);
+  if (!entry || entry.resetAt < now) {
+    guestHits.set(ip, { count: 1, resetAt: now + GUEST_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= GUEST_MAX_REQUESTS) return false;
+  entry.count += 1;
+  return true;
+}
+
 
 const getTherapistName = (therapyType: string, voiceGender: string) => {
   if (therapyType === "krishna_chat") return "Krishna";
@@ -440,11 +458,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Auth: guest/persona modes require any bearer token (validated by gateway);
-    // authenticated chat requires a real verified user.
-    if (isGuestMode || isPersonaGeneration) {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) return errorResponse("Unauthorized", 401);
+    // Auth:
+    // - Persona generation requires a verified authenticated user (it's a paid AI call
+    //   tied to user data, never a guest feature).
+    // - Guest mode is unauthenticated by design but is rate-limited per IP to prevent
+    //   abuse of paid AI credits via the public anon key.
+    // - Authenticated chat requires a real verified user.
+    if (isPersonaGeneration) {
+      const auth = await requireUser(req);
+      if (auth instanceof Response) return auth;
+    } else if (isGuestMode) {
+      const ip =
+        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        req.headers.get("cf-connecting-ip") ||
+        "unknown";
+      if (!checkGuestRateLimit(ip)) {
+        return errorResponse("Rate limit exceeded. Please sign up to continue.", 429);
+      }
     } else {
       const auth = await requireUser(req);
       if (auth instanceof Response) return auth;
