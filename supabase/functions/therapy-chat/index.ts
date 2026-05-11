@@ -440,11 +440,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Auth: guest/persona modes require any bearer token (validated by gateway);
-    // authenticated chat requires a real verified user.
-    if (isGuestMode || isPersonaGeneration) {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) return errorResponse("Unauthorized", 401);
+    // Auth:
+    // - Persona generation requires a verified authenticated user (it's a paid AI call
+    //   tied to user data, never a guest feature).
+    // - Guest mode is unauthenticated by design but is rate-limited per IP to prevent
+    //   abuse of paid AI credits via the public anon key.
+    // - Authenticated chat requires a real verified user.
+    if (isPersonaGeneration) {
+      const auth = await requireUser(req);
+      if (auth instanceof Response) return auth;
+    } else if (isGuestMode) {
+      const ip =
+        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        req.headers.get("cf-connecting-ip") ||
+        "unknown";
+      if (!checkGuestRateLimit(ip)) {
+        return errorResponse("Rate limit exceeded. Please sign up to continue.", 429);
+      }
     } else {
       const auth = await requireUser(req);
       if (auth instanceof Response) return auth;
