@@ -11,6 +11,7 @@ import { ReportPage } from "@/features/report";
 import { DiaryPage } from "@/features/diary";
 import Activities from "./pages/Activities";
 import Blog from "./pages/Blog";
+import Yoga from "./pages/Yoga";
 import ProAccess from "./pages/ProAccess";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/activities" element={<Activities />} />
           <Route path="/diary" element={<DiaryPage />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/yoga" element={<Yoga />} />
           <Route path="/pro-access" element={<ProAccess />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
