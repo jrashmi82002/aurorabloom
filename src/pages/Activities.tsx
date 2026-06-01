@@ -8,7 +8,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
-import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye, Undo2, UserCircle, Type, Save, Trash2, Pencil } from "lucide-react";
+import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye, Undo2, UserCircle, Type, Save, Trash2, Pencil, Newspaper } from "lucide-react";
 import { paintingsService, type Painting } from "@/services/paintings.service";
 import { useToast } from "@/hooks/use-toast";
 import { useCalmingSounds } from "@/hooks/useCalmingSounds";
@@ -677,6 +677,7 @@ const Activities = () => {
     { id: "gratitude", title: "Gratitude Journal", description: "Daily gratitude reflection", icon: Brain, color: "from-yellow-400 to-amber-500" },
     { id: "illusions", title: "Illusions", description: "Relaxing optical illusions for your mind", icon: Eye, color: "from-violet-400 to-purple-600" },
     { id: "mbti", title: "Personality Quiz", description: "Discover your MBTI personality type", icon: UserCircle, color: "from-pink-400 to-rose-600" },
+    { id: "blog", title: "Healing Blog", description: "Articles on self-healing & psychology", icon: Newspaper, color: "from-sky-400 to-blue-500" },
   ];
 
   const affirmations = [
@@ -755,7 +756,7 @@ const Activities = () => {
                       <Card
                         key={activity.id}
                         className="group hover:shadow-calm transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 relative"
-                        onClick={() => setActiveGame(activity.id)}
+                        onClick={() => activity.id === "blog" ? navigate("/blog") : setActiveGame(activity.id)}
                       >
                         <CardHeader className="space-y-3">
                           <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${activity.color} flex items-center justify-center transition-transform group-hover:scale-110`}>

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, MessageSquare, Clock, FileText, Gamepad2, BookOpen, Newspaper, LogOut, Trash2, Pencil, X, Check, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageSquare, Clock, FileText, Gamepad2, BookOpen, Flower2, LogOut, Trash2, Pencil, X, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isThisMonth, isThisYear } from "date-fns";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -381,12 +381,12 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
             My Diary
           </Button>
           <Button
-            variant={location.pathname === "/blog" ? "secondary" : "ghost"}
+            variant={location.pathname === "/yoga" ? "secondary" : "ghost"}
             className="w-full justify-start gap-2 h-9"
-            onClick={() => handleNavigate("/blog")}
+            onClick={() => handleNavigate("/yoga")}
           >
-            <Newspaper className="w-4 h-4" />
-            Healing Blog
+            <Flower2 className="w-4 h-4" />
+            Yoga
           </Button>
           <Button
             variant={location.pathname === "/chat" && new URLSearchParams(location.search).get("type") === "krishna_chat" ? "secondary" : "ghost"}
