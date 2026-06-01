@@ -1,22 +1,19 @@
-# Welcome to your Lovable project
+# Welcome to AuroraBloom
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/daef9a92-1a46-4e5d-810d-ed2ad39bc05e
+It is a Therapy platform to listen you and to be your partner in stressful situations. 
+You can track your mood, emotional fluctuations and personality traits based on your activity.
+Activities like Journaling, focus timers, Meditation, Breath work, puzzle etc are there to help you recover.
+Remember Mental health is a priority and we got your back!
 
-## How can I edit this code?
+**URL**: [https://lovable.dev/projects/daef9a92-1a46-4e5d-810d-ed2ad39bc05e](https://aurorabloom.lovable.app/)
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/daef9a92-1a46-4e5d-810d-ed2ad39bc05e) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
+## How to contribute?
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes. Following up a PR can be raised.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -60,14 +57,10 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## How it is deployed currently?
 
-Simply open [Lovable](https://lovable.dev/projects/daef9a92-1a46-4e5d-810d-ed2ad39bc05e) and click on Share -> Publish.
+Using Lovable [Lovable](https://lovable.dev/projects/daef9a92-1a46-4e5d-810d-ed2ad39bc05e) 
 
-## Can I connect a custom domain to my Lovable project?
+## Can a custom domain be connected?
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Yes! Lovable is used for development ease purpose
