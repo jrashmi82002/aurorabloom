@@ -733,7 +733,7 @@ const Activities = () => {
                 <Gamepad2 className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl md:text-2xl font-serif font-bold truncate">Therapy Activities</h1>
+                <h1 className="text-xl md:text-2xl font-serif font-bold truncate">Activities</h1>
                 <p className="text-xs md:text-sm text-muted-foreground truncate">Mind-calming exercises for your wellbeing</p>
               </div>
             </div>

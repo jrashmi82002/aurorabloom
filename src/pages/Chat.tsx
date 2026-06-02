@@ -43,10 +43,10 @@ const GuestSidebar = ({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => v
             <FileText className="w-4 h-4" /> Monthly Report
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/activities")}>
-            <Gamepad2 className="w-4 h-4" /> Therapy Activities
+            <Gamepad2 className="w-4 h-4" /> Activities
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/diary")}>
-            <BookOpen className="w-4 h-4" /> My Diary
+            <BookOpen className="w-4 h-4" /> Journal
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2 h-9 opacity-60" onClick={() => handleLockedNav("/blog")}>
             <Newspaper className="w-4 h-4" /> Healing Blog

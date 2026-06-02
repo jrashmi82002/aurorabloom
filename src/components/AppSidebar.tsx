@@ -370,7 +370,7 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
             onClick={() => handleNavigate("/activities")}
           >
             <Gamepad2 className="w-4 h-4" />
-            Therapy Activities
+            Activities
           </Button>
           <Button
             variant={location.pathname === "/diary" ? "secondary" : "ghost"}
@@ -378,7 +378,7 @@ export const AppSidebar = ({ userId, isOpen, onToggle }: AppSidebarProps) => {
             onClick={() => handleNavigate("/diary")}
           >
             <BookOpen className="w-4 h-4" />
-            My Diary
+            Journal
           </Button>
           <Button
             variant={location.pathname === "/yoga" ? "secondary" : "ghost"}

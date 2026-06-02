@@ -448,7 +448,7 @@ const Diary = () => {
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl md:text-2xl font-serif font-bold truncate">My Diary</h1>
+                <h1 className="text-xl md:text-2xl font-serif font-bold truncate">Journal</h1>
                 <p className="text-xs md:text-sm text-muted-foreground truncate">Your private space for reflection</p>
               </div>
             </div>
