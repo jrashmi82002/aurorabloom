@@ -170,12 +170,17 @@ const Yoga = () => {
                   <p className="mt-3 text-base md:text-lg text-muted-foreground max-w-2xl">
                     A timeless practice for body, mind, and spirit. Explore poses, learn from trusted sources, and reach out with any question.
                   </p>
-                  <div className="mt-5 flex gap-3">
+                  <div className="mt-5 flex flex-wrap gap-3">
                     <Button onClick={() => scrollToContact()} className="bg-gradient-calm hover:opacity-90">
                       Ask a Question
                     </Button>
                     <Button variant="outline" onClick={() => navigate("/activities")}>
                       Try Guided Asanas
+                    </Button>
+                    <Button variant="outline" asChild className="border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400">
+                      <a href="https://whatsapp.com/channel/0029VbCXRu19cDDXHhO1U30e" target="_blank" rel="noopener noreferrer">
+                        Join Community
+                      </a>
                     </Button>
                   </div>
                 </div>
