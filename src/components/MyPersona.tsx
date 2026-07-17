@@ -169,13 +169,23 @@ Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use
 
       if (error) throw error;
       setPersona(data.message);
+      // Upsert to cache so next open is instant.
+      await supabase.from("persona_cache").upsert({
+        user_id: userId,
+        persona_text: data.message,
+        input_hash: inputHash,
+        generated_at: new Date().toISOString(),
+      });
     } catch (error) {
       console.error("Error generating persona:", error);
-      setPersona("You are a soul of quiet courage — the kind of person who steps into the unknown with an open heart. The very fact that you are here, exploring your inner world, speaks volumes about your strength and self-awareness. You carry within you the light of curiosity, the warmth of empathy, and the resilience of someone who refuses to stop growing. Like Arjuna standing at the crossroads, you seek answers not from fear, but from a deep desire to understand yourself and the world around you. Your journey is just beginning, and already it shines with promise. 🌱\n\n*\"योगस्थः कुरु कर्माणि\" — Established in yoga, perform your actions.* — Bhagavad Gita 2.48");
+      if (!persona) {
+        setPersona("You are a soul of quiet courage — the kind of person who steps into the unknown with an open heart. The very fact that you are here, exploring your inner world, speaks volumes about your strength and self-awareness. You carry within you the light of curiosity, the warmth of empathy, and the resilience of someone who refuses to stop growing. Like Arjuna standing at the crossroads, you seek answers not from fear, but from a deep desire to understand yourself and the world around you. Your journey is just beginning, and already it shines with promise. 🌱\n\n*\"योगस्थः कुरु कर्माणि\" — Established in yoga, perform your actions.* — Bhagavad Gita 2.48");
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loading) {
     return (
