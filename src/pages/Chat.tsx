@@ -995,7 +995,11 @@ const Chat = () => {
                 <Send className="w-5 h-5" />
               </Button>
             </div>
+            <p className="max-w-3xl mx-auto mt-2 text-[10px] text-center text-muted-foreground/70 leading-relaxed">
+              This is a wellness companion offering reflection and support — not medical advice or a diagnosis. For persistent or serious concerns, please consult a licensed professional.
+            </p>
           </div>
+
         </main>
       </div>
     </div>
