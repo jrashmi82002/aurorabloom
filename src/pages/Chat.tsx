@@ -198,7 +198,7 @@ const Chat = () => {
         },
       });
       if (error) throw error;
-      const reply: Message = { role: "assistant", content: data.message };
+      const reply: Message = { role: "assistant", content: data.message, safety_level: data.safety_level };
       setMessages(prev => [...prev, reply]);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -371,7 +371,7 @@ const Chat = () => {
 
         if (replyError) throw replyError;
 
-        const assistantReply: Message = { role: "assistant", content: replyData.message };
+        const assistantReply: Message = { role: "assistant", content: replyData.message, safety_level: replyData.safety_level };
         setMessages(prev => [...prev, assistantReply]);
 
         await supabase.from("therapy_messages").insert({
@@ -670,7 +670,7 @@ const Chat = () => {
           },
         });
         if (error) throw error;
-        const reply: Message = { role: "assistant", content: data.message };
+        const reply: Message = { role: "assistant", content: data.message, safety_level: data.safety_level };
         setMessages(prev => [...prev, reply]);
 
         // After the 5th user message, prompt signup softly
@@ -757,7 +757,7 @@ const Chat = () => {
 
       if (error) throw error;
 
-      const assistantMessage: Message = { role: "assistant", content: data.message };
+      const assistantMessage: Message = { role: "assistant", content: data.message, safety_level: data.safety_level };
       setMessages((prev) => [...prev, assistantMessage]);
 
       await supabase.from("therapy_messages").insert({
