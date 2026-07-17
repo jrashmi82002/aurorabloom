@@ -1,8 +1,30 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { handlePreflight, jsonResponse, errorResponse, corsHeaders } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
-import { createUserClient } from "../_shared/supabase.ts";
+import { createUserClient, createServiceClient } from "../_shared/supabase.ts";
 import { parseJsonBody, z } from "../_shared/validation.ts";
+
+// Keywords indicating the assistant should append a "please consult a professional" warning.
+const CRITICAL_PATTERNS = /\b(suicid|kill myself|end my life|self[- ]harm|cutting myself|overdose|want to die|hurt myself)\b/i;
+const CAUTION_PATTERNS = /\b(panic attack|hallucinat|voices in my head|psychosi|withdrawal|abus(e|ive)|assault|trauma flashback|can't stop crying|starving myself|purging)\b/i;
+
+function detectSafetyLevel(text: string): "info" | "caution" | "critical" {
+  if (!text) return "info";
+  if (CRITICAL_PATTERNS.test(text)) return "critical";
+  if (CAUTION_PATTERNS.test(text)) return "caution";
+  return "info";
+}
+
+const CLINICAL_TONE_GUIDELINES = `
+CLINICAL-SAFE LANGUAGE (VERY IMPORTANT):
+1. NEVER diagnose. NEVER say "you have depression/anxiety/PTSD/BPD/ADHD" etc.
+2. Reframe with recovery language: instead of "you have anxiety" say "you're navigating a stretch of heightened worry — and paying attention to it like this is exactly how people build tolerance and recover."
+3. Frame growth areas as strengths-in-progress: "focusing on [sleep / grounding / boundaries] would strengthen what you're already doing."
+4. When suggesting a possibility, phrase it as a *precaution*, not a label: "some of what you describe overlaps with patterns a therapist would want to hear about — worth a conversation with a professional, just to be safe."
+5. NEVER present yourself as a cure or a substitute for professional care.
+6. If serious symptoms appear (suicidal thoughts, self-harm, psychosis cues, severe panic, abuse, substance withdrawal), your reply MUST include a gentle line telling them to reach out to a licensed professional or a crisis line, without being alarmist.
+`;
+
 
 // Therapy chat input schema. We allow optional fields because the same endpoint
 // is used for greetings, guest chat, and persona generation.
