@@ -877,16 +877,22 @@ const Chat = () => {
                   key={index}
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <Card
-                    className={`max-w-[85%] p-4 ${
-                      message.role === "user"
-                        ? "bg-gradient-calm text-white border-0"
-                        : "bg-card"
-                    }`}
-                  >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
+                  <div className="max-w-[85%]">
+                    {message.role === "assistant" &&
+                      (message.safety_level === "caution" || message.safety_level === "critical") && (
+                        <SafetyBanner level={message.safety_level} />
+                      )}
+                    <Card
+                      className={`p-4 ${
+                        message.role === "user"
+                          ? "bg-gradient-calm text-white border-0"
+                          : "bg-card"
+                      }`}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+
                     {message.role === "assistant" && voiceEnabled && (
                       <div className="flex gap-2 mt-2">
                         {isLoadingVoice && isSpeaking && !isPaused ? (
