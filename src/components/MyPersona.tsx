@@ -1,17 +1,76 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const MyPersona = () => {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [persona, setPersona] = useState<string>("");
   const [mbtiResult, setMbtiResult] = useState<string | null>(null);
 
   useEffect(() => {
     loadMbtiResult();
-    generatePersona();
+    loadPersonaFromCache();
   }, []);
+
+  const loadMbtiResult = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const stored = localStorage.getItem(`mbti_result_${user.id}`);
+      if (stored) setMbtiResult(stored);
+    } catch {}
+  };
+
+  // Compute a cheap fingerprint of user data. If it changes, we regenerate.
+  const computeInputHash = async (userId: string): Promise<string> => {
+    const [{ count: sessionCount }, { count: diaryCount }, { data: lastSession }] = await Promise.all([
+      supabase.from("therapy_sessions").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("diary_entries").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("therapy_sessions").select("id, message_count").eq("user_id", userId).order("started_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    return `s${sessionCount ?? 0}:d${diaryCount ?? 0}:m${lastSession?.data?.message_count ?? 0}:${lastSession?.data?.id ?? ""}`;
+  };
+
+  const loadPersonaFromCache = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      // 1. Read cache first — instant paint
+      const { data: cached } = await supabase
+        .from("persona_cache")
+        .select("persona_text, input_hash, generated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (cached?.persona_text) {
+        setPersona(cached.persona_text);
+        setLoading(false);
+      }
+
+      // 2. Decide if we need to revalidate
+      const currentHash = await computeInputHash(user.id);
+      const ageDays = cached?.generated_at
+        ? (Date.now() - new Date(cached.generated_at).getTime()) / 86_400_000
+        : Infinity;
+      const stale = !cached || cached.input_hash !== currentHash || ageDays > 7;
+
+      if (stale) {
+        if (cached) setRefreshing(true); // silent update
+        await generatePersona(user.id, currentHash);
+        setRefreshing(false);
+      }
+
+      if (!cached) setLoading(false);
+    } catch (e) {
+      console.error("persona cache load failed:", e);
+      setLoading(false);
+    }
+  };
+
+
 
   const loadMbtiResult = async () => {
     try {
