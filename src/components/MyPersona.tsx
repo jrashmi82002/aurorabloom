@@ -202,7 +202,13 @@ Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-primary" />
           <h3 className="font-serif text-lg">Your Inner Reflection</h3>
+          {refreshing && (
+            <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+              <RefreshCw className="w-3 h-3 animate-spin" /> updating…
+            </span>
+          )}
         </div>
+
         {mbtiResult && (
           <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
             <p className="text-sm font-semibold text-primary">Personality Type: {mbtiResult}</p>
