@@ -12,6 +12,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo } from "@/components/Logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SafetyBanner } from "@/components/SafetyBanner";
+
 
 // Guest sidebar with locked features
 const GuestSidebar = ({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) => {
@@ -68,7 +70,9 @@ const GuestSidebar = ({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => v
 interface Message {
   role: "user" | "assistant";
   content: string;
+  safety_level?: "info" | "caution" | "critical";
 }
+
 
 const therapyTitles: Record<string, string> = {
   yogic: "Yogic Therapy",
