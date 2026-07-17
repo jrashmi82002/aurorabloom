@@ -30,7 +30,7 @@ export const MyPersona = () => {
       supabase.from("diary_entries").select("*", { count: "exact", head: true }).eq("user_id", userId),
       supabase.from("therapy_sessions").select("id, message_count").eq("user_id", userId).order("started_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
-    return `s${sessionCount ?? 0}:d${diaryCount ?? 0}:m${lastSession?.data?.message_count ?? 0}:${lastSession?.data?.id ?? ""}`;
+    return `s${sessionCount ?? 0}:d${diaryCount ?? 0}:m${lastSession?.message_count ?? 0}:${lastSession?.id ?? ""}`;
   };
 
   const loadPersonaFromCache = async () => {
@@ -69,23 +69,10 @@ export const MyPersona = () => {
       setLoading(false);
     }
   };
-
-
-
-  const loadMbtiResult = async () => {
+  const generatePersona = async (userId: string, inputHash: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      // Check localStorage for MBTI result
-      const stored = localStorage.getItem(`mbti_result_${user.id}`);
-      if (stored) setMbtiResult(stored);
-    } catch {}
-  };
+      const user = { id: userId };
 
-  const generatePersona = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
       // Gather all user data
       const [profileRes, sessionsRes, diaryRes] = await Promise.all([
