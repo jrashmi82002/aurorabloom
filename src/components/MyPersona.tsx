@@ -1,32 +1,78 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const MyPersona = () => {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [persona, setPersona] = useState<string>("");
   const [mbtiResult, setMbtiResult] = useState<string | null>(null);
 
   useEffect(() => {
     loadMbtiResult();
-    generatePersona();
+    loadPersonaFromCache();
   }, []);
 
   const loadMbtiResult = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      // Check localStorage for MBTI result
       const stored = localStorage.getItem(`mbti_result_${user.id}`);
       if (stored) setMbtiResult(stored);
     } catch {}
   };
 
-  const generatePersona = async () => {
+  // Compute a cheap fingerprint of user data. If it changes, we regenerate.
+  const computeInputHash = async (userId: string): Promise<string> => {
+    const [{ count: sessionCount }, { count: diaryCount }, { data: lastSession }] = await Promise.all([
+      supabase.from("therapy_sessions").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("diary_entries").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("therapy_sessions").select("id, message_count").eq("user_id", userId).order("started_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    return `s${sessionCount ?? 0}:d${diaryCount ?? 0}:m${lastSession?.message_count ?? 0}:${lastSession?.id ?? ""}`;
+  };
+
+  const loadPersonaFromCache = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
+
+      // 1. Read cache first — instant paint
+      const { data: cached } = await supabase
+        .from("persona_cache")
+        .select("persona_text, input_hash, generated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (cached?.persona_text) {
+        setPersona(cached.persona_text);
+        setLoading(false);
+      }
+
+      // 2. Decide if we need to revalidate
+      const currentHash = await computeInputHash(user.id);
+      const ageDays = cached?.generated_at
+        ? (Date.now() - new Date(cached.generated_at).getTime()) / 86_400_000
+        : Infinity;
+      const stale = !cached || cached.input_hash !== currentHash || ageDays > 7;
+
+      if (stale) {
+        if (cached) setRefreshing(true); // silent update
+        await generatePersona(user.id, currentHash);
+        setRefreshing(false);
+      }
+
+      if (!cached) setLoading(false);
+    } catch (e) {
+      console.error("persona cache load failed:", e);
+      setLoading(false);
+    }
+  };
+  const generatePersona = async (userId: string, inputHash: string) => {
+    try {
+      const user = { id: userId };
+
 
       // Gather all user data
       const [profileRes, sessionsRes, diaryRes] = await Promise.all([
@@ -123,13 +169,23 @@ Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use
 
       if (error) throw error;
       setPersona(data.message);
+      // Upsert to cache so next open is instant.
+      await supabase.from("persona_cache").upsert({
+        user_id: userId,
+        persona_text: data.message,
+        input_hash: inputHash,
+        generated_at: new Date().toISOString(),
+      });
     } catch (error) {
       console.error("Error generating persona:", error);
-      setPersona("You are a soul of quiet courage — the kind of person who steps into the unknown with an open heart. The very fact that you are here, exploring your inner world, speaks volumes about your strength and self-awareness. You carry within you the light of curiosity, the warmth of empathy, and the resilience of someone who refuses to stop growing. Like Arjuna standing at the crossroads, you seek answers not from fear, but from a deep desire to understand yourself and the world around you. Your journey is just beginning, and already it shines with promise. 🌱\n\n*\"योगस्थः कुरु कर्माणि\" — Established in yoga, perform your actions.* — Bhagavad Gita 2.48");
+      if (!persona) {
+        setPersona("You are a soul of quiet courage — the kind of person who steps into the unknown with an open heart. The very fact that you are here, exploring your inner world, speaks volumes about your strength and self-awareness. You carry within you the light of curiosity, the warmth of empathy, and the resilience of someone who refuses to stop growing. Like Arjuna standing at the crossroads, you seek answers not from fear, but from a deep desire to understand yourself and the world around you. Your journey is just beginning, and already it shines with promise. 🌱\n\n*\"योगस्थः कुरु कर्माणि\" — Established in yoga, perform your actions.* — Bhagavad Gita 2.48");
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -146,7 +202,13 @@ Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-primary" />
           <h3 className="font-serif text-lg">Your Inner Reflection</h3>
+          {refreshing && (
+            <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+              <RefreshCw className="w-3 h-3 animate-spin" /> updating…
+            </span>
+          )}
         </div>
+
         {mbtiResult && (
           <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
             <p className="text-sm font-semibold text-primary">Personality Type: {mbtiResult}</p>

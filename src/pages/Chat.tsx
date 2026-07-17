@@ -12,6 +12,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo } from "@/components/Logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SafetyBanner } from "@/components/SafetyBanner";
+
 
 // Guest sidebar with locked features
 const GuestSidebar = ({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) => {
@@ -68,7 +70,9 @@ const GuestSidebar = ({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => v
 interface Message {
   role: "user" | "assistant";
   content: string;
+  safety_level?: "info" | "caution" | "critical";
 }
+
 
 const therapyTitles: Record<string, string> = {
   yogic: "Yogic Therapy",
@@ -194,7 +198,7 @@ const Chat = () => {
         },
       });
       if (error) throw error;
-      const reply: Message = { role: "assistant", content: data.message };
+      const reply: Message = { role: "assistant", content: data.message, safety_level: data.safety_level };
       setMessages(prev => [...prev, reply]);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -367,7 +371,7 @@ const Chat = () => {
 
         if (replyError) throw replyError;
 
-        const assistantReply: Message = { role: "assistant", content: replyData.message };
+        const assistantReply: Message = { role: "assistant", content: replyData.message, safety_level: replyData.safety_level };
         setMessages(prev => [...prev, assistantReply]);
 
         await supabase.from("therapy_messages").insert({
@@ -666,7 +670,7 @@ const Chat = () => {
           },
         });
         if (error) throw error;
-        const reply: Message = { role: "assistant", content: data.message };
+        const reply: Message = { role: "assistant", content: data.message, safety_level: data.safety_level };
         setMessages(prev => [...prev, reply]);
 
         // After the 5th user message, prompt signup softly
@@ -753,7 +757,7 @@ const Chat = () => {
 
       if (error) throw error;
 
-      const assistantMessage: Message = { role: "assistant", content: data.message };
+      const assistantMessage: Message = { role: "assistant", content: data.message, safety_level: data.safety_level };
       setMessages((prev) => [...prev, assistantMessage]);
 
       await supabase.from("therapy_messages").insert({
@@ -873,16 +877,22 @@ const Chat = () => {
                   key={index}
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <Card
-                    className={`max-w-[85%] p-4 ${
-                      message.role === "user"
-                        ? "bg-gradient-calm text-white border-0"
-                        : "bg-card"
-                    }`}
-                  >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
+                  <div className="max-w-[85%]">
+                    {message.role === "assistant" &&
+                      (message.safety_level === "caution" || message.safety_level === "critical") && (
+                        <SafetyBanner level={message.safety_level} />
+                      )}
+                    <Card
+                      className={`p-4 ${
+                        message.role === "user"
+                          ? "bg-gradient-calm text-white border-0"
+                          : "bg-card"
+                      }`}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+
                     {message.role === "assistant" && voiceEnabled && (
                       <div className="flex gap-2 mt-2">
                         {isLoadingVoice && isSpeaking && !isPaused ? (
@@ -941,9 +951,11 @@ const Chat = () => {
                         )}
                       </div>
                     )}
-                  </Card>
+                    </Card>
+                  </div>
                 </div>
               ))}
+
               {loading && (
                 <div className="flex justify-start">
                   <Card className="max-w-[80%] p-4 bg-card">
@@ -983,7 +995,11 @@ const Chat = () => {
                 <Send className="w-5 h-5" />
               </Button>
             </div>
+            <p className="max-w-3xl mx-auto mt-2 text-[10px] text-center text-muted-foreground/70 leading-relaxed">
+              This is a wellness companion offering reflection and support — not medical advice or a diagnosis. For persistent or serious concerns, please consult a licensed professional.
+            </p>
           </div>
+
         </main>
       </div>
     </div>

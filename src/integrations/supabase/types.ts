@@ -155,6 +155,30 @@ export type Database = {
         }
         Relationships: []
       }
+      persona_cache: {
+        Row: {
+          generated_at: string
+          input_hash: string
+          persona_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          input_hash: string
+          persona_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          input_hash?: string
+          persona_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pro_access_requests: {
         Row: {
           email: string
@@ -298,6 +322,7 @@ export type Database = {
           created_at: string | null
           id: string
           role: string
+          safety_level: string | null
           session_id: string
         }
         Insert: {
@@ -305,6 +330,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           role: string
+          safety_level?: string | null
           session_id: string
         }
         Update: {
@@ -312,6 +338,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: string
+          safety_level?: string | null
           session_id?: string
         }
         Relationships: [
@@ -331,7 +358,9 @@ export type Database = {
           is_active: boolean | null
           last_message_at: string | null
           message_count: number | null
+          rolling_summary: string | null
           started_at: string | null
+          summary_up_to_message_count: number
           therapy_type: Database["public"]["Enums"]["therapy_type"]
           title: string
           user_id: string
@@ -342,7 +371,9 @@ export type Database = {
           is_active?: boolean | null
           last_message_at?: string | null
           message_count?: number | null
+          rolling_summary?: string | null
           started_at?: string | null
+          summary_up_to_message_count?: number
           therapy_type: Database["public"]["Enums"]["therapy_type"]
           title: string
           user_id: string
@@ -353,7 +384,9 @@ export type Database = {
           is_active?: boolean | null
           last_message_at?: string | null
           message_count?: number | null
+          rolling_summary?: string | null
           started_at?: string | null
+          summary_up_to_message_count?: number
           therapy_type?: Database["public"]["Enums"]["therapy_type"]
           title?: string
           user_id?: string

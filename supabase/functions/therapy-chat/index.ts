@@ -1,8 +1,30 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { handlePreflight, jsonResponse, errorResponse, corsHeaders } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
-import { createUserClient } from "../_shared/supabase.ts";
+import { createUserClient, createServiceClient } from "../_shared/supabase.ts";
 import { parseJsonBody, z } from "../_shared/validation.ts";
+
+// Keywords indicating the assistant should append a "please consult a professional" warning.
+const CRITICAL_PATTERNS = /\b(suicid|kill myself|end my life|self[- ]harm|cutting myself|overdose|want to die|hurt myself)\b/i;
+const CAUTION_PATTERNS = /\b(panic attack|hallucinat|voices in my head|psychosi|withdrawal|abus(e|ive)|assault|trauma flashback|can't stop crying|starving myself|purging)\b/i;
+
+function detectSafetyLevel(text: string): "info" | "caution" | "critical" {
+  if (!text) return "info";
+  if (CRITICAL_PATTERNS.test(text)) return "critical";
+  if (CAUTION_PATTERNS.test(text)) return "caution";
+  return "info";
+}
+
+const CLINICAL_TONE_GUIDELINES = `
+CLINICAL-SAFE LANGUAGE (VERY IMPORTANT):
+1. NEVER diagnose. NEVER say "you have depression/anxiety/PTSD/BPD/ADHD" etc.
+2. Reframe with recovery language: instead of "you have anxiety" say "you're navigating a stretch of heightened worry — and paying attention to it like this is exactly how people build tolerance and recover."
+3. Frame growth areas as strengths-in-progress: "focusing on [sleep / grounding / boundaries] would strengthen what you're already doing."
+4. When suggesting a possibility, phrase it as a *precaution*, not a label: "some of what you describe overlaps with patterns a therapist would want to hear about — worth a conversation with a professional, just to be safe."
+5. NEVER present yourself as a cure or a substitute for professional care.
+6. If serious symptoms appear (suicidal thoughts, self-harm, psychosis cues, severe panic, abuse, substance withdrawal), your reply MUST include a gentle line telling them to reach out to a licensed professional or a crisis line, without being alarmist.
+`;
+
 
 // Therapy chat input schema. We allow optional fields because the same endpoint
 // is used for greetings, guest chat, and persona generation.
@@ -503,7 +525,7 @@ Deno.serve(async (req) => {
 
     const therapistName = getTherapistName(therapyType, voiceGender);
     const promptFn = therapyPrompts[therapyType] || therapyPrompts.talk_therapy;
-    let systemPrompt = promptFn(therapistName);
+    let systemPrompt = promptFn(therapistName) + "\n" + CLINICAL_TONE_GUIDELINES;
 
     // Add user name context
     if (userName) {
@@ -530,11 +552,47 @@ ${quizData.customNotes ? `- They shared: "${quizData.customNotes}"` : ''}
 Use this naturally. Don't mention the quiz. Adapt your tone based on their mood and stress.`;
     }
 
+    // ROLLING SUMMARY + CONTEXT TRIM: for long sessions, load the compressed
+    // rolling summary and only send the last 12 messages verbatim. Keeps the
+    // prompt small no matter how long the conversation has run.
+    const KEEP_RECENT = 12;
+    let sessionRollingSummary: string | null = null;
+    let sessionSummaryUpTo = 0;
+    const isRealSession =
+      sessionId &&
+      sessionId !== "persona-generation" &&
+      sessionId !== "guest-session" &&
+      !isGuestMode &&
+      !isPersonaGeneration;
+
+    if (isRealSession && messages.length > KEEP_RECENT) {
+      try {
+        const svc = createServiceClient();
+        const { data: sess } = await svc
+          .from("therapy_sessions")
+          .select("rolling_summary, summary_up_to_message_count")
+          .eq("id", sessionId)
+          .maybeSingle();
+        sessionRollingSummary = sess?.rolling_summary ?? null;
+        sessionSummaryUpTo = sess?.summary_up_to_message_count ?? 0;
+      } catch (e) {
+        console.error("Failed to load rolling summary:", e);
+      }
+    }
+
+    if (sessionRollingSummary) {
+      systemPrompt += `\n\nPRIOR CONVERSATION SUMMARY (earlier parts of this session, compressed):\n"${sessionRollingSummary}"\n\nUse this to stay consistent, but respond to the recent messages below.`;
+    }
+
+    const trimmedMessages = messages.length > KEEP_RECENT
+      ? messages.slice(-KEEP_RECENT)
+      : messages;
+
     const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || "";
-    const shouldAddStory = 
-      (messageCount > 0 && messageCount % 15 === 0) || 
-      lastUserMessage.includes("example") || 
-      lastUserMessage.includes("story") || 
+    const shouldAddStory =
+      (messageCount > 0 && messageCount % 15 === 0) ||
+      lastUserMessage.includes("example") ||
+      lastUserMessage.includes("story") ||
       lastUserMessage.includes("quote") ||
       lastUserMessage.includes("gita") ||
       lastUserMessage.includes("shloka") ||
@@ -555,7 +613,7 @@ Use this naturally. Don't mention the quiz. Adapt your tone based on their mood 
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          ...messages.map((msg: any) => ({ role: msg.role, content: msg.content })),
+          ...trimmedMessages.map((msg: any) => ({ role: msg.role, content: msg.content })),
         ],
       }),
     });
@@ -579,9 +637,76 @@ Use this naturally. Don't mention the quiz. Adapt your tone based on their mood 
       aiMessage += getRelatableStory(therapyType);
     }
 
-    return jsonResponse({ message: aiMessage });
+    // Safety classification from the last user message (server-side keyword check).
+    const safetyLevel = detectSafetyLevel(lastUserMessage);
+
+    // Fire-and-forget rolling-summary update every 10 messages once the session
+    // has enough history. Uses the same LOVABLE_API_KEY; failures are logged
+    // but never break the reply.
+    if (
+      isRealSession &&
+      messages.length >= sessionSummaryUpTo + 10 &&
+      messages.length >= KEEP_RECENT
+    ) {
+      const updateSummary = async () => {
+        try {
+          const priorSummary = sessionRollingSummary || "(none yet)";
+          const transcript = messages
+            .slice(0, messages.length - KEEP_RECENT + 2)
+            .map((m: any) => `${m.role === "user" ? "User" : "Therapist"}: ${m.content}`)
+            .join("\n");
+          const sumRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "You compress therapy transcripts into a running summary. In <=200 tokens: preserve emotional themes, unresolved threads, named people, coping strategies discussed, and any safety concerns. No preamble.",
+                },
+                {
+                  role: "user",
+                  content: `Previous summary:\n${priorSummary}\n\nNew transcript to fold in:\n${transcript}\n\nReturn the updated summary only.`,
+                },
+              ],
+            }),
+          });
+          if (sumRes.ok) {
+            const sumData = await sumRes.json();
+            const newSummary = sumData.choices?.[0]?.message?.content?.trim();
+            if (newSummary) {
+              const svc = createServiceClient();
+              await svc
+                .from("therapy_sessions")
+                .update({
+                  rolling_summary: newSummary,
+                  summary_up_to_message_count: messages.length,
+                })
+                .eq("id", sessionId);
+            }
+          }
+        } catch (e) {
+          console.error("Rolling summary update failed:", e);
+        }
+      };
+      // @ts-ignore - EdgeRuntime is provided by Deno Deploy
+      if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
+        // @ts-ignore
+        (EdgeRuntime as any).waitUntil(updateSummary());
+      } else {
+        updateSummary(); // fire and forget
+      }
+    }
+
+    return jsonResponse({ message: aiMessage, safety_level: safetyLevel });
   } catch (error) {
     console.error("Error in therapy-chat function:", error);
     return errorResponse(error instanceof Error ? error.message : "Unknown error", 500);
   }
 });
+
