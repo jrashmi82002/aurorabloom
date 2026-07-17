@@ -951,9 +951,11 @@ const Chat = () => {
                         )}
                       </div>
                     )}
-                  </Card>
+                    </Card>
+                  </div>
                 </div>
               ))}
+
               {loading && (
                 <div className="flex justify-start">
                   <Card className="max-w-[80%] p-4 bg-card">
