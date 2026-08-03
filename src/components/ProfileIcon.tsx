@@ -182,11 +182,12 @@ export const ProfileIcon = ({ className }: ProfileIconProps) => {
                   My Persona
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="font-serif">My Persona</DialogTitle>
-                  <DialogDescription>Your personalized reflection based on your journey</DialogDescription>
+              <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto p-6 sm:p-8">
+                <DialogHeader className="mb-2">
+                  <DialogTitle className="font-serif text-2xl">My Persona</DialogTitle>
+                  <DialogDescription className="text-sm">Your personalized reflection based on your journey</DialogDescription>
                 </DialogHeader>
+
                 <MyPersona />
               </DialogContent>
             </Dialog>
