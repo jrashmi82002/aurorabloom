@@ -189,41 +189,59 @@ Write in second person ("You are..."). Be poetic, warm, and deeply personal. Use
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center py-20 gap-4 rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-transparent">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">Reflecting on your journey...</p>
       </div>
     );
   }
 
   return (
-    <Card className="border-0 shadow-none">
-      <CardContent className="p-0">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <h3 className="font-serif text-lg">Your Inner Reflection</h3>
+    <Card className="relative overflow-hidden border border-primary/15 rounded-2xl bg-gradient-to-br from-primary/[0.07] via-accent/[0.05] to-background shadow-lg">
+      {/* soft aurora glows */}
+      <div className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 rounded-full bg-primary/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-28 -left-24 w-80 h-80 rounded-full bg-accent/15 blur-3xl" />
+
+      <CardContent className="relative p-7 sm:p-10">
+        <div className="flex items-center gap-3 mb-7">
+          <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/12 border border-primary/20">
+            <Sparkles className="w-5 h-5 text-primary" />
+          </span>
+          <div>
+            <h3 className="font-serif text-2xl leading-tight">Your Inner Reflection</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Woven from your sessions, moods and words</p>
+          </div>
           {refreshing && (
-            <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
               <RefreshCw className="w-3 h-3 animate-spin" /> updating…
             </span>
           )}
         </div>
 
         {mbtiResult && (
-          <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
-            <p className="text-sm font-semibold text-primary">Personality Type: {mbtiResult}</p>
+          <div className="mb-7 px-5 py-4 rounded-xl bg-primary/10 border border-primary/20">
+            <p className="text-[11px] uppercase tracking-widest text-primary/70 mb-1">Personality Type</p>
+            <p className="text-lg font-semibold text-primary font-serif">{mbtiResult}</p>
           </div>
         )}
-        <div className="prose prose-sm dark:prose-invert max-w-none">
+
+        <div className="max-w-none space-y-5">
           {persona.split('\n').map((paragraph, i) => (
             paragraph.trim() ? (
-              <p key={i} className="text-sm text-muted-foreground leading-relaxed mb-3">
+              <p key={i} className="text-[15px] text-foreground/80 leading-[1.85] first:first-letter:text-4xl first:first-letter:font-serif first:first-letter:text-primary first:first-letter:float-left first:first-letter:mr-2 first:first-letter:leading-none">
                 {paragraph.replace(/\*\*(.*?)\*\*/g, '$1').trim()}
               </p>
             ) : null
           ))}
         </div>
+
+        <div className="mt-8 pt-5 border-t border-primary/10">
+          <p className="text-xs text-muted-foreground italic">
+            A reflection, not a diagnosis — it grows as you share more.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
 };
+
