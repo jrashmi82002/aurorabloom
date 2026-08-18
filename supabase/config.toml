@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.elevenlabs-tts]
 verify_jwt = false
+
+[functions.cache-worker]
+verify_jwt = true
