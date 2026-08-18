@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cacheService } from "@/services/cache.service";
 import { Loader2, Sparkles, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -38,7 +39,20 @@ export const MyPersona = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      // 1. Read cache first — instant paint
+      // 1. Hot read — precomputed by the background worker, no AI call here.
+      const hot = await cacheService.read<{ persona_text?: string }>(user.id, "persona");
+      if (hot?.payload?.persona_text) {
+        setPersona(hot.payload.persona_text);
+        setLoading(false);
+        if (hot.stale) {
+          setRefreshing(true);
+          await cacheService.markDirty(["persona"], "stale-open");
+          setRefreshing(false);
+        }
+        return;
+      }
+
+      // 2. Legacy cache row — still instant paint.
       const { data: cached } = await supabase
         .from("persona_cache")
         .select("persona_text, input_hash, generated_at")
@@ -50,7 +64,8 @@ export const MyPersona = () => {
         setLoading(false);
       }
 
-      // 2. Decide if we need to revalidate
+      // 3. Nothing cached (or the fingerprint moved) → compute once, then let
+      //    the background worker keep it fresh from here on.
       const currentHash = await computeInputHash(user.id);
       const ageDays = cached?.generated_at
         ? (Date.now() - new Date(cached.generated_at).getTime()) / 86_400_000
@@ -58,7 +73,7 @@ export const MyPersona = () => {
       const stale = !cached || cached.input_hash !== currentHash || ageDays > 7;
 
       if (stale) {
-        if (cached) setRefreshing(true); // silent update
+        if (cached) setRefreshing(true);
         await generatePersona(user.id, currentHash);
         setRefreshing(false);
       }
@@ -69,6 +84,7 @@ export const MyPersona = () => {
       setLoading(false);
     }
   };
+
   const generatePersona = async (userId: string, inputHash: string) => {
     try {
       const user = { id: userId };

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      cache_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          processed_at: string | null
+          reason: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          processed_at?: string | null
+          reason?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          processed_at?: string | null
+          reason?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diary_entries: {
         Row: {
           content: string
@@ -50,6 +86,57 @@ export type Database = {
           theme?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      hot_cache: {
+        Row: {
+          computed_at: string
+          expires_at: string | null
+          input_hash: string | null
+          kind: string
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          computed_at?: string
+          expires_at?: string | null
+          input_hash?: string | null
+          kind: string
+          payload?: Json
+          user_id: string
+        }
+        Update: {
+          computed_at?: string
+          expires_at?: string | null
+          input_hash?: string | null
+          kind?: string
+          payload?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_state: {
+        Row: {
+          locked_until: string | null
+          name: string
+          paused_at: string | null
+          paused_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          locked_until?: string | null
+          name: string
+          paused_at?: string | null
+          paused_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          locked_until?: string | null
+          name?: string
+          paused_at?: string | null
+          paused_reason?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -478,6 +565,10 @@ export type Database = {
         Returns: boolean
       }
       can_user_start_session: { Args: { user_id_param: string }; Returns: Json }
+      enqueue_cache_job: {
+        Args: { _kind: string; _reason?: string }
+        Returns: undefined
+      }
       generate_username_suggestion: {
         Args: { base_name: string }
         Returns: string
