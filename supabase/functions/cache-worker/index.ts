@@ -267,16 +267,13 @@ Deno.serve(async (req) => {
       }
     }
   } finally {
-    await service
-      .from("job_state")
-      .update({
-        locked_until: null,
-        paused_reason: pausedNow ?? (paused && processed > 0 ? null : state?.paused_reason ?? null),
-        paused_at: pausedNow ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("name", JOB_NAME);
+    await service.rpc("release_job_lease", {
+      _name: JOB_NAME,
+      _paused_reason:
+        pausedNow ?? (paused && processed > 0 ? null : (state?.paused_reason ?? null)),
+    });
   }
+
 
   return jsonResponse({ processed, paused: pausedNow ?? paused });
 });
