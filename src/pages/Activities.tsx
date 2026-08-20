@@ -324,6 +324,9 @@ const Activities = () => {
         toast({ title: "Painting saved" });
       }
       await loadPaintings(user.id);
+      // Creative activity completed → refresh insights in the background.
+      cacheService.markDirty(["persona", "profile_stats"], "painting-saved");
+
     } catch (e: any) {
       toast({ title: "Save failed", description: e.message, variant: "destructive" });
     }
