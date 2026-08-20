@@ -10,6 +10,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { PanelLeft, Gamepad2, Palette, Wind, Music, Sparkles, Eraser, PaintBucket, Pause, Play, Square, Crown, Timer, Brain, Flower2, Puzzle, BookOpen, Moon, Music2, Eye, Undo2, UserCircle, Type, Save, Trash2, Pencil, Newspaper } from "lucide-react";
 import { paintingsService, type Painting } from "@/services/paintings.service";
+import { cacheService } from "@/services/cache.service";
 import { useToast } from "@/hooks/use-toast";
 import { useCalmingSounds } from "@/hooks/useCalmingSounds";
 import { createKrishnaBhajanAudio } from "@/hooks/useKrishnaBhajan";
@@ -323,6 +324,9 @@ const Activities = () => {
         toast({ title: "Painting saved" });
       }
       await loadPaintings(user.id);
+      // Creative activity completed → refresh insights in the background.
+      cacheService.markDirty(["persona", "profile_stats"], "painting-saved");
+
     } catch (e: any) {
       toast({ title: "Save failed", description: e.message, variant: "destructive" });
     }

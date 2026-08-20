@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { cacheService } from "@/services/cache.service";
 import jsPDF from "jspdf";
 import {
   Dialog,
@@ -281,6 +282,9 @@ const Diary = () => {
 
       await fetchEntries(user.id);
       toast({ title: "Entry saved 💙" });
+      // Journal entry finished → recompute insights in the background.
+      cacheService.markDirty(["persona", "report", "profile_stats"], "diary-saved");
+
     } catch (error: any) {
       console.error("Save error:", error);
       toast({ title: "Failed to save", variant: "destructive" });

@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo } from "@/components/Logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SafetyBanner } from "@/components/SafetyBanner";
+import { cacheService } from "@/services/cache.service";
 
 
 // Guest sidebar with locked features
@@ -402,7 +403,10 @@ const Chat = () => {
     if (newSessionId) {
       sendInitialMessage(newSessionId, data);
     }
+    // Quiz gives fresh signal about the user → refresh insights in background.
+    cacheService.markDirty(["profile_stats", "persona"], "quiz-completed");
   };
+
 
   const loadExistingSession = async (sid: string) => {
     try {
@@ -782,6 +786,12 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Track live values for the unmount handler (closures would see stale state).
+  const sessionSnapshotRef = useRef({ sessionId: null as string | null, count: 0 });
+  useEffect(() => {
+    sessionSnapshotRef.current = { sessionId, count: messages.length };
+  }, [sessionId, messages.length]);
+
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
@@ -789,8 +799,15 @@ const Chat = () => {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      // Session closed → queue a background insight refresh (once per session,
+      // never per message).
+      const snap = sessionSnapshotRef.current;
+      if (snap.sessionId && snap.count >= 4) {
+        cacheService.markDirty(["persona", "report", "profile_stats"], "session-closed");
+      }
     };
   }, []);
+
 
   const therapistName = getTherapistName(voiceStyle || voiceGender, voiceOptions);
 
