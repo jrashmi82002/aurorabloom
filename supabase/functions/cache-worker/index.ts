@@ -164,25 +164,25 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "AI is not configured" }, 500);
   }
 
-  // 1. Paused-state guard + single-flight lease in one atomic update.
+  // 1. Paused-state guard + single-flight lease (atomic, in SQL).
   const { data: state } = await service
     .from("job_state")
-    .select("paused_reason, locked_until")
+    .select("paused_reason")
     .eq("name", JOB_NAME)
     .maybeSingle();
 
   const paused = Boolean(state?.paused_reason);
-  const leaseUntil = new Date(Date.now() + LEASE_MINUTES * 60_000).toISOString();
 
-  const { data: leased } = await service
-    .from("job_state")
-    .update({ locked_until: leaseUntil, updated_at: new Date().toISOString() })
-    .eq("name", JOB_NAME)
-    .or(`locked_until.is.null,locked_until.lt.${new Date().toISOString()}`)
-    .select("name")
-    .maybeSingle();
-
+  const { data: leased, error: leaseErr } = await service.rpc("acquire_job_lease", {
+    _name: JOB_NAME,
+    _minutes: LEASE_MINUTES,
+  });
+  if (leaseErr) {
+    console.error("lease acquisition failed:", leaseErr);
+    return jsonResponse({ error: "lease failed" }, 500);
+  }
   if (!leased) return jsonResponse({ skipped: "another run holds the lease" });
+
 
   // While paused we process at most ONE probe job to detect recovery.
   const limit = paused ? 1 : BATCH_SIZE;
