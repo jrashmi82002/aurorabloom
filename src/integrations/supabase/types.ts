@@ -545,6 +545,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_job_lease: {
+        Args: { _minutes?: number; _name: string }
+        Returns: boolean
+      }
       can_update_own_profile: {
         Args: {
           _daily_message_count: number
@@ -585,6 +589,10 @@ export type Database = {
         Returns: boolean
       }
       is_current_month: { Args: { _ts: string }; Returns: boolean }
+      release_job_lease: {
+        Args: { _name: string; _paused_reason?: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
