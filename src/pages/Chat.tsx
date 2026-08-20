@@ -403,7 +403,10 @@ const Chat = () => {
     if (newSessionId) {
       sendInitialMessage(newSessionId, data);
     }
+    // Quiz gives fresh signal about the user → refresh insights in background.
+    cacheService.markDirty(["profile_stats", "persona"], "quiz-completed");
   };
+
 
   const loadExistingSession = async (sid: string) => {
     try {
